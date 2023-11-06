@@ -24,6 +24,7 @@
 #include <virtualization/arm/mm.h>
 #include <virtualization/arm/cpu.h>
 #include <virtualization/arm/vgic_v3.h>
+#include <virtualization/arm/vtimer.h>
 #include <virtualization/vm_mm.h>
 #include <virtualization/zvm.h>
 
@@ -185,12 +186,12 @@ int vm_create(struct z_vm_info *vm_info, struct vm *new_vm)
     if (vm->vmid >= CONFIG_MAX_VM_NUM) {
         return -EOVERFLOW;
     }
-
+    
     /* allocate vm's os struct */
     vm->os = (struct os *)k_malloc(sizeof(struct os));
 	if (!vm->os) {
 		ZVM_LOG_WARN("Allocate memory for os error! \n");
-		return -ENOMEM;
+		return -ENOMEM;	
 	}
     /* init os here */
 	ret = vm_os_create(vm, vm_info);
@@ -440,6 +441,7 @@ int vm_delete(struct vm *vm)
     struct vm_mem_domain *vmem_dm = vm->vmem_domain;
     struct vcpu *vcpu;
     struct vcpu_work *vwork;
+    struct virt_timer_context *ctxt;
 
     key = k_spin_lock(&vm->spinlock);
 
@@ -453,35 +455,53 @@ int vm_delete(struct vm *vm)
         }
     }
 
-    /* remove all the partition in the vmem_domain */
-    ret = vm_mem_apart_remove(vmem_dm);
+    /* delete all the deleted partition in the vmem_domain*/
+    ret = vm_mem_domain_delete(vm);
 
     /* delete vcpu struct */
     for(int i = 0; i < vm->vcpu_num; i++){
         vcpu = vm->vcpus[i];
         if(!vcpu) continue;
-        vwork = vcpu->work;
-        if(vwork){
-            k_free(vwork->vcpu_thread);
-        }
+        vm->vcpus[i] = NULL;
 
-        k_free(vcpu->arch);
-        k_free(vcpu->virq_struct);
+        vwork = vcpu->work;
+        vwork->vcpu_thread->vcpu_struct = NULL;
+        k_free(vwork->vcpu_thread);
+        vwork->vcpu_thread = NULL;
         k_free(vcpu->work);
+        vcpu->work = NULL;
+
+        ctxt = vcpu->arch->vtimer_context;
+        ctxt->vcpu = NULL;
+        k_free(ctxt);
+        vcpu->arch->vtimer_context = NULL;
+        k_free(vcpu->arch->vgicv3_context);
+        vcpu->arch->vgicv3_context = NULL;
+        k_free(vcpu->arch);
+        vcpu->arch = NULL;
+        k_free(vcpu->virq_struct);
+        vcpu->virq_struct = NULL;
         k_free(vcpu);
     }
 
 
-    /* remov vm's desc struct */
+    /* remove vm's desc struct */
     struct virt_irq_desc *desc = VGIC_DATA_VID(vm->vm_irq_block_data);
     k_free(desc);
     k_free(vm->vm_irq_block_data);
+    vm->vm_irq_block_data = NULL;
     k_free(vm->ops);
+    vm->ops = NULL;
     k_free(vm->arch);
+    vm->arch = NULL;
     k_free(vm->vcpus);
+    vm->vcpus = NULL;
     k_free(vm->vmem_domain);
-    if(vm->os->name) k_free(vm->os->name);
+    vm->vmem_domain = NULL;
+    k_free(vm->os->name);
+    vm->os->name = NULL;
     k_free(vm->os);
+    vm->os = NULL;
     zvm_overall_info->vms[vm->vmid] = NULL;
     k_free(vm);
     k_spin_unlock(&vm->spinlock, key);

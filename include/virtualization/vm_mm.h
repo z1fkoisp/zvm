@@ -69,15 +69,15 @@ struct vm_mem_partition {
     /* the vm_mem_partition node link to vm mm */
     sys_dnode_t vpart_node;
 
-    /* mem_block lists for physical memmory management */
-    sys_dlist_t blk_list;
-
     /* vwork_mm_area belong to one vmem_domain */
     struct  vm_mem_domain   *vmem_domain;
 
 #ifdef CONFIG_VM_DYNAMIC_MEMORY
     /* base address of memory allocated by kmalloc */
     uint64_t part_kpa_base;
+
+    /* mem_block lists for physical memmory management */
+    sys_dlist_t blk_list;
 #endif
 };
 
@@ -108,7 +108,7 @@ struct vm_mem_domain{
  * @param vpart : vpart for each task
  * @return int : 0--success, other for error code.
  */
-int map_vpart_to_block(struct vm_mem_domain *vmem_domain, struct vm_mem_partition *vpart, uint64_t unit_msize);
+int map_vpart_to_block(struct vm_mem_domain *vmem_domain, struct vm_mem_partition *vpart);
 int unmap_vpart_to_block(struct vm_mem_domain *vmem_domain, struct vm_mem_partition *vpart);
 
 /**
@@ -128,6 +128,14 @@ int vm_vdev_mem_create(struct vm_mem_domain *vmem_domain, uint64_t hpbase,
  * @param vm : vm struct for store vm_mm struct
  */
 int vm_mem_domain_create(struct vm *vm);
+
+/**
+ * @brief delete the vm mm struct of vm
+ * delete function has two steps to delete the vm mm.
+ * 1. remove the map in virt memory and phys memory.
+ * 2. free the physical memory that allocated to vm
+ */
+int vm_mem_domain_delete(struct vm *vm);
 
 /**
  * @brief add mm area to this vm's mm space.

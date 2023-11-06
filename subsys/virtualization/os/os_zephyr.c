@@ -43,7 +43,7 @@ int load_zephyr_image(struct vm_mem_domain *vmem_domain)
     ARG_UNUSED(dbuf);
     ARG_UNUSED(sbuf);
     int ret = 0;
-    uint64_t zbase_size,zimage_base,zimage_size;
+    uint64_t base_addr,base_size,image_base,image_size,phys,entry;
     struct _dnode *d_node, *ds_node;
     struct vm_mem_partition *vpart;
     struct vm_mem_block *blk;
@@ -57,13 +57,20 @@ int load_zephyr_image(struct vm_mem_domain *vmem_domain)
 #endif /* CONFIG_VM_DYNAMIC_MEMORY */
 
     /*Find the zephyr image base_addr and it size here */
-    zbase_size = ZEPHYR_VM_MEM_SIZE;
-    zimage_base = zvm_mapped_zephyr_image();
-    zimage_size = ZEPHYR_VM_IMG_SIZE;
+    base_addr = ZEPHYR_VM_MEM_BASE;
+    base_size =  ZEPHYR_VM_MEM_SIZE;
+    image_base = zvm_mapped_zephyr_image();
+    image_size = ZEPHYR_VM_IMG_SIZE;
+    entry = ZEPHYR_VMSYS_ENTRY;
     SYS_DLIST_FOR_EACH_NODE_SAFE(&vmem_domain->mapped_vpart_list,d_node,ds_node){
         vpart = CONTAINER_OF(d_node,struct vm_mem_partition,vpart_node);
-        if(vpart->part_hpa_size == zbase_size){
-            memcpy((void *)vpart->part_hpa_base,(const void *)zimage_base,zimage_size);
+        if(vpart->part_hpa_base == base_addr){
+            vpart->part_kpa_base = k_malloc(image_size+CONFIG_MMU_PAGE_SIZE);
+            phys = ROUND_UP(vpart->part_kpa_base,CONFIG_MMU_PAGE_SIZE);
+            phys = z_mem_phys_addr(phys);
+            memcpy(phys,image_base,image_size);
+            arch_mmap_vpart_to_block(vmem_domain->vm_mm_domain,phys,
+                                    entry,image_size,MT_VM_NORMAL_MEM,false,this_vm->vmid);
             break;
         }
     }

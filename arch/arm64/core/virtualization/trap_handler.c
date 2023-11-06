@@ -16,6 +16,9 @@
 #include <virtualization/arm/asm.h>
 #include <virtualization/arm/vtimer.h>
 #include <virtualization/arm/vgic_v3.h>
+#include <virtualization/os/os.h>
+#include <virtualization/os/os_linux.h>
+#include <virtualization/os/os_zephyr.h>
 
 LOG_MODULE_DECLARE(ZVM_MODULE_NAME);
 
@@ -44,7 +47,41 @@ static int handle_ftrans_desc(int iss_dfsc, uint64_t pa_addr,
 {
     int ret = 0;
 #ifdef CONFIG_VM_DYNAMIC_MEMORY
-    /* TODO: Add dynamic memory allocate. */
+    struct vm *vm = get_current_vm();
+    struct vm_mem_domain *vmem_domain = vm->vmem_domain;
+    struct _dnode *d_node, *ds_node,*vd_node, *vds_node;
+    struct vm_mem_partition *vpart;
+    struct vm_mem_block *blk;
+    uint64_t base_size, base_addr, base_offset, mem_size;
+    uint16_t vmid = vm->vmid;
+    if(vmid < ZVM_ZEPHYR_VM_NUM){
+        base_size   = ZEPHYR_VM_MEM_SIZE;
+        base_addr   = ZEPHYR_VM_MEM_BASE;
+        mem_size    = ZEPHYR_VM_BLOCK_SIZE;
+        base_offset = (pa_addr - base_size - ZEPHYR_VM_IMG_SIZE)/mem_size;
+    }else{
+        base_size = LINUX_VM_MEM_SIZE;
+        base_addr = LINUX_VM_MEM_BASE;
+        mem_size  = LINUX_VM_BLOCK_SIZE;
+        base_offset = (pa_addr - base_size - LINUX_VM_IMG_SIZE)/mem_size;
+    }
+    SYS_DLIST_FOR_EACH_NODE_SAFE(&vmem_domain->mapped_vpart_list,d_node,ds_node){
+        vpart = CONTAINER_OF(d_node,struct vm_mem_partition,vpart_node);
+        if(vpart->part_hpa_base == base_addr){
+            SYS_DLIST_FOR_EACH_NODE_SAFE(&vpart->blk_list,vd_node,vds_node){
+                blk =  CONTAINER_OF(vd_node,struct vm_mem_block,vblk_node);
+                if(blk->cur_blk_offset == base_offset){
+                    blk->phy_pointer = k_malloc(mem_size + CONFIG_MMU_PAGE_SIZE);
+                    blk->phy_base    = ROUND_UP(blk->phy_pointer, CONFIG_MMU_PAGE_SIZE);
+                    blk->phy_base    = z_mem_phys_addr(blk->phy_base);
+                    arch_mmap_vpart_to_block(vmem_domain->vm_mm_domain,blk->phy_base,
+                                    blk->virt_base,mem_size,MT_VM_NORMAL_MEM,false,vmid);
+                    break;
+                }
+            }
+            break;
+        }
+    }
 #else 
     uint16_t reg_index = dabt->srt;
     uint64_t *reg_value;
@@ -153,7 +190,7 @@ static int cpu_system_msr_mrs_sync(arch_commom_regs_t *arch_ctxt, uint64_t esr_e
 
     reg_name = this_esr & ESR_SYSINS_REGS_MASK;
     switch (reg_name) {
-    /* supporte sgi related register here */
+    /* support sgi related register here */
     case ESR_SYSINSREG_SGI1R_EL1:
 	case ESR_SYSINSREG_ASGI1R_EL1:
 	case ESR_SYSINSREG_SGI0R_EL1:

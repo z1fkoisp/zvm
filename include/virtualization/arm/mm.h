@@ -86,9 +86,9 @@
 /**
  * @brief Mapping vpart to physical block address.
  */
-int arch_mmap_vpart_to_block(uintptr_t phys, uintptr_t virt, size_t size, uint32_t attrs);
-int arch_unmap_vpart_to_block(uintptr_t virt, size_t size);
-
+int arch_mmap_vpart_to_block(struct k_mem_domain *domain, uintptr_t phys, uintptr_t virt, size_t size, uint32_t attrs, bool invalid, uint32_t vmid);
+int arch_unmap_vpart_to_block(struct k_mem_domain *domain, uintptr_t virt, size_t size, uint32_t attrs, uint32_t vmid);
+ 
 /**
  * @brief Add dev io memory map for the VM.
  */
