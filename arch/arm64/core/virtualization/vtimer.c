@@ -111,6 +111,7 @@ static void virt_vtimer_expiry(struct _timeout *t)
 
 	ctxt->cntv_ctl |= CNTV_CTL_IMASK_BIT;
 	vcpu = (struct vcpu*)ctxt->vcpu;
+	if(vcpu == NULL) return;
 
 	set_virq_to_vcpu(vcpu, virq_num);
 }
@@ -132,6 +133,7 @@ static void virt_ptimer_expiry(struct _timeout *t)
 
 	ctxt->cntp_ctl |= CNTV_CTL_IMASK_BIT;
 	vcpu = (struct vcpu*)ctxt->vcpu;
+	if(vcpu == NULL) return;
 
 	set_virq_to_vcpu(vcpu, virq_num);
 }

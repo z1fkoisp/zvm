@@ -334,6 +334,7 @@ static void arch_vcpu_fp_regs_init(struct vcpu *vcpu)
 
 void arch_vcpu_context_save(struct vcpu *vcpu)
 {
+    if(vcpu == NULL) return;
     vcpu_vgic_save(vcpu);
     vcpu_vtimer_save(vcpu);
     vcpu_sysreg_save(vcpu);
