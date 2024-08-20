@@ -190,6 +190,8 @@
 
     };
 
+  
+
     vm_zephyr_space {
         #address-cells = <2>;
         #size-cells = <2>;
@@ -224,5 +226,5 @@
             reg = <0x0 0xf3000000 0x0 DT_SIZE_M(240)>;
             label = "VM1_MEM";
         };
-    };
+    }; 
 };
