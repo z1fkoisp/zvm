@@ -144,4 +144,4 @@ uart3: 用作主机shell控制
 
 `Prev>> 在QEMU上运行ZVM <https://gitee.com/openeuler/zvm/blob/master/zvm_doc/3_Run_on_ARM64_QEMU.rst>`__
 
-`Next>> 加入我们 <https://gitee.com/openeuler/zvm/blob/master/zvm_doc/5_Join_us.rst>`__
+`Next>> 基于ZVM混合部署框架 <https://gitee.com/openeuler/zvm/blob/master/zvm_doc/5_Hybrid_Deployment_MICA.rst>`__

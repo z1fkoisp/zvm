@@ -49,4 +49,4 @@
 --------
 欢迎大家反馈开发中遇到的问题，可以联系上面邮箱。
 
-`Prev>> 在RK3568上运行ZVM <https://gitee.com/openeuler/zvm/blob/master/zvm_doc/4_Run_on_ROC_RK3568_PC.rst>`__
+`Prev>> 基于ZVM混合部署框架 <https://gitee.com/openeuler/zvm/blob/master/zvm_doc/5_Hybrid_Deployment_MICA.rst>`__
