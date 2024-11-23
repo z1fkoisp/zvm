@@ -72,23 +72,13 @@ elif [ "$OPS" = "${ops_array[1]}" ]; then
 # gdb-multiarch -q -ex 'file ./build/zephyr/zvm_host.elf' -ex 'target remote localhost:1234'
 
     elif [ "$PLAT" = "${plat_array[1]}" ]; then
-        /opt/arm/developmentstudio-2021.2/bin/FVP_Base_Cortex-A55x4+Cortex-A75x2 	\
-        /path-to/FVP_Base_RevC-2xAEMvA \
-        -C pctl.startup=0.0.0.* \
-        -C bp.secure_memory=0 \
-        -C cache_state_modelled=0 \
-        -C bp.pl011_uart0.untimed_fifos=1 -C bp.pl011_uart0.unbuffered_output=1 -C bp.pl011_uart0.out_file=uart0.log \
-        -C bp.pl011_uart1.out_file=uart1.log \
-        -C bp.terminal_0.terminal_command=/usr/bin/gnome-terminal -C bp.terminal_0.mode=raw \
-        -C bp.terminal_1.terminal_command=/usr/bin/gnome-terminal -C bp.terminal_1.mode=raw \
-        -C bp.secureflashloader.fname=/path-to/bl1.bin \
-        -C bp.flashloader0.fname=/path-to/fip.bin \
-        -C bp.ve_sysregs.mmbSiteDefault=0 -C bp.ve_sysregs.exit_on_shutdown=1 \
-        --data cluster0.cpu0=/path-to/zephyr.bin@0xa0000000 \
-        --data cluster0.cpu0=/path-to/Image@0xb0000000 \
-        --data cluster0.cpu0=/path-to/fvp-base-gicv3-psci.dtb@0xc0000000   \
-        --cpulimit 4 \
-        --iris-server
+### export lib for Foundation_Platform, sometimes some lib may not be found
+## export LD_LIBRARY_PATH=/usr/aarch64-linux-gnu/lib
+        $(pwd)/zvm_config/fvp_platform/hub/Foundation_Platformpkg/models/Linux64_armv8l_GCC-9.3/Foundation_Platform \
+        --no-secure-memory --cores 4 --arm-v8.1 --quantum=10000\
+        --image $(pwd)/build/zephyr/zvm_host.elf \
+        --nsdata $(pwd)/zvm_config/fvp_platform/hub/zephyr.elf@0xa0000000 \
+        --cadi-server --print-port-number
     else
         echo "Error arguments for this auto.sh! \n Please input command like: ./z_auto.sh build qemu. "
     fi

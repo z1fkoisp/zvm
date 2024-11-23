@@ -12,6 +12,7 @@ build*/
 !tests/drivers/build_all
 cscope.*
 .dir
+*.launch
 
 /*.patch
 
@@ -67,3 +68,4 @@ todo
 
 # ignore Image
 zvm_config/qemu_platform/hub/*
+zvm_config/fvp_platform/hub/*

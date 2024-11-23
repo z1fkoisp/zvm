@@ -113,7 +113,6 @@
 		};
 
 		uart0: uart@1c090000 {
-
 			compatible = "arm,pl011";
 			reg = <0x0 0x1c090000 0x0 0x1000>;
 			status = "disabled";
@@ -125,13 +124,11 @@
 		};
 
 		flash0: flash@0 {
-
 			compatible = "soc-nv-flash";
 			reg = <0x0 0x0 0x0 DT_SIZE_K(64)>;
 		};
 
 		dram0: memory@80000000 {
-
 			compatible = "mmio-dram";
 			reg = <0x0 0x80000000 0x0 DT_SIZE_M(2048)>;
 		};
