@@ -401,18 +401,21 @@ int vm_device_init(struct vm *vm)
     int ret, i;
 
     sys_dlist_init(&vm->vdev_list);
+
+#ifdef CONFIG_VM_SHMEM
     ret = vm_mem_create(vm);
 	if (ret) {
         ZVM_LOG_WARN("Init vm mem error! \n");
         return -EMMAO;
     }
-
+#endif
+#ifdef CONFIG_VM_SHMEMRW
     ret = vm_mem_rw_create(vm);
     if (ret) {
         ZVM_LOG_WARN("Init vm mem_rw error! \n");
         return -EMMAO;
     }
-
+#endif
 	/* Assign ids to virtual devices. */
 	for (i = 0; i < zvm_virtual_devices_count_get(); i++) {
 		const struct virtual_device_instance *virtual_device = zvm_virtual_device_get(i);
