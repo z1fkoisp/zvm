@@ -20,6 +20,11 @@ zephyr_sources_ifdef(
 )
 
 zephyr_sources_ifdef(
+    CONFIG_SOC_FVP_BASE_A55X4_A75X2
+    pt_device_fvp_cortex_a55x4_a75x2.c
+)
+
+zephyr_sources_ifdef(
     CONFIG_VM_VIRTIO_MMIO
     virtio.c
     virtio_mmio.c

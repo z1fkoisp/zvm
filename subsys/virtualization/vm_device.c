@@ -398,7 +398,7 @@ void vm_device_callback_func(const struct device *dev, void *cb,
 
 int vm_device_init(struct vm *vm)
 {
-    int ret, i;
+    int ret = 0, i;
 
     sys_dlist_init(&vm->vdev_list);
 
