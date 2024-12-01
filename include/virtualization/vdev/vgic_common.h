@@ -147,14 +147,15 @@ int vgic_vdev_mem_read(struct virt_dev *vdev, uint64_t addr, uint64_t *value, ui
 int vgic_vdev_mem_write(struct virt_dev *vdev, uint64_t addr, uint64_t *value, uint16_t size);
 
 /**
- * @brief send a virt irq signal to a vcpu.
+ * @brief set/unset a virt irq signal to a vcpu.
  */
 int set_virq_to_vcpu(struct vcpu *vcpu, uint32_t virq_num);
 
 /**
- * @brief send a virq to vm that bind to this vcpu.
+ * @brief set/unset a virt irq to vm.
  */
 int set_virq_to_vm(struct vm *vm, uint32_t virq_num);
+int unset_virq_to_vm(struct vm *vm, uint32_t virq_num);
 
 int virt_irq_sync_vgic(struct vcpu *vcpu);
 int virt_irq_flush_vgic(struct vcpu *vcpu);

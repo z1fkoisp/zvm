@@ -365,6 +365,7 @@ struct vcpu *vm_vcpu_init(struct vm *vm, uint16_t vcpu_id, char *vcpu_name)
     sys_dlist_init(&vcpu->virq_block.active_irqs);
     ZVM_SPINLOCK_INIT(&vcpu->virq_block.spinlock);
     init_vcpu_virt_irq_desc(&vcpu->virq_block);
+    ZVM_SPINLOCK_INIT(&vcpu->vcpu_lock);
 
     if (vm->is_rtos) {
         vm_prio = VCPU_RT_PRIO;

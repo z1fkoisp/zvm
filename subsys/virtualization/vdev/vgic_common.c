@@ -171,6 +171,34 @@ static int vgic_set_virq(struct vcpu *vcpu, struct virt_irq_desc *desc)
     return 0;
 }
 
+static int vgic_unset_virq(struct vcpu *vcpu, struct virt_irq_desc *desc)
+{
+	uint8_t lr_state;
+    k_spinlock_key_t key;
+    struct vcpu_virt_irq_block *vb = &vcpu->virq_block;
+
+    if (!is_vm_irq_valid(vcpu->vm, desc->virq_flags)) {
+        ZVM_LOG_WARN("VM can not recieve virq signal, \
+						VM's name: %s.", vcpu->vm->vm_name);
+        return -EVIRQ;
+    }
+
+    key = k_spin_lock(&vb->spinlock);
+	lr_state = desc->virq_states;
+
+	desc->virq_flags &= ~VIRQ_PENDING_FLAG;
+	desc->virq_flags &= ~VIRQ_ACTIVED_FLAG;
+
+	if (sys_dnode_is_linked(&desc->desc_node)) {
+		sys_dlist_remove(&desc->desc_node);
+		vb->virq_pending_counts--;
+	}
+
+    k_spin_unlock(&vb->spinlock, key);
+
+    return 0;
+}
+
 /**
  * @brief set sgi interrupt to vm, which usually used on vcpu
  * communication.
@@ -246,6 +274,18 @@ static int vgic_gicd_mem_write(struct vcpu *vcpu, struct virt_gic_gicd *gicd,
 			x = (offset - GICD_ICENABLERn) / 4;
 			y = x * 32;
 			vgic_test_and_set_enable_bit(vcpu, y, value, 32, 0, gicd);
+			break;
+		case GICD_ISPENDRn...(GICD_ICPENDRn - 1):
+			/* Set virt irq to vm. */
+			x = (offset - GICD_ISPENDRn) / 4;
+			y = x * 32;
+			vgic_test_and_set_pending_bit(vcpu, y, value, 32, 1, gicd);
+			break;
+		case GICD_ICPENDRn...(GICD_ISACTIVERn - 1):
+			/* Unset virt irq to vm. */
+			x = (offset - GICD_ICPENDRn) / 4;
+			y = x * 32;
+			vgic_test_and_set_pending_bit(vcpu, y, value, 32, 0, gicd);
 			break;
 		case GICD_IPRIORITYRn...(GIC_DIST_BASE + 0x07f8 - 1):
 			t = *value;
@@ -414,7 +454,32 @@ int set_virq_to_vm(struct vm *vm, uint32_t virq_num)
     target_vcpu = vm->vcpus[desc->vcpu_id];
     ret = vgic_set_virq(target_vcpu, desc);
     if (ret >= 0) {
-		return VM_IRQ_TO_VM_SUCCESS;
+		return SET_IRQ_TO_VM_SUCCESS;
+	}
+
+	return ret;
+}
+
+int unset_virq_to_vm(struct vm *vm, uint32_t virq_num)
+{
+    uint32_t ret = 0;
+    struct virt_irq_desc *desc;
+    struct vcpu *vcpu, *target_vcpu;
+    vcpu = vm->vcpus[DEFAULT_VCPU];
+
+    if (virq_num < VM_LOCAL_VIRQ_NR) {
+        desc = &vcpu->virq_block.vcpu_virt_irq_desc[virq_num];
+    } else if (virq_num <= VM_GLOBAL_VIRQ_NR) {
+        desc = &vm->vm_irq_block.vm_virt_irq_desc[virq_num - VM_LOCAL_VIRQ_NR];
+    } else {
+        ZVM_LOG_WARN("The spi num that ready to allocate is too big.");
+        return -ENODEV;
+    }
+
+    target_vcpu = vm->vcpus[desc->vcpu_id];
+    ret = vgic_unset_virq(target_vcpu, desc);
+    if (ret >= 0) {
+		return UNSET_IRQ_TO_VM_SUCCESS;
 	}
 
 	return ret;
