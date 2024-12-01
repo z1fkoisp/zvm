@@ -103,8 +103,8 @@
 	chosen {
 		bootargs = "root=/dev/ram0 init=/sbin/init ramdisk_size=10000000 rootfstype=cpio rw";
 		stdout-path = "/pl011@9000000";
-		linux,initrd-start = <0x45000000>;
-		linux,initrd-end = <0x4FA75E3D>;
+		linux,initrd-start = <0x49000000>;
+		linux,initrd-end = <0x54000000>;
 		kaslr-seed = <0xfe5f4802 0xd861995f>;
 	};
 };
