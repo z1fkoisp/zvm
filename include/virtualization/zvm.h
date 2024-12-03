@@ -288,6 +288,31 @@ static ALWAYS_INLINE int get_static_idle_cpu(void) {
     return -ESRCH;
 }
 
+static ALWAYS_INLINE void reset_idle_cpu(uint16_t cpu_id) {
+    k_spinlock_key_t key;
+
+#ifdef CONFIG_SMP
+        /* In SMP, _current is a field read from _current_cpu, which
+        * can race with preemption before it is read.  We must lock
+        * local interrupts when reading it.
+        */
+        unsigned int k = arch_irq_lock();
+#endif
+        k_tid_t tid = _kernel.cpus[cpu_id].current;
+#ifdef CONFIG_SMP
+        arch_irq_unlock(k);
+#endif
+
+    int prio = k_thread_priority_get(tid);
+
+    if (prio == K_IDLE_PRIO && (used_cpus & (1 << cpu_id))) {
+        key = k_spin_lock(&cpu_mask_lock);
+        used_cpus &= ~(1 << cpu_id);
+        k_spin_unlock(&cpu_mask_lock, key);
+    }
+    isb();
+}
+
 static ALWAYS_INLINE bool is_vmid_full(void)
 {
     return zvm_overall_info->alloced_vmid == BIT_MASK(CONFIG_MAX_VM_NUM);

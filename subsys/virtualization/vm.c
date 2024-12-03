@@ -457,7 +457,12 @@ int vm_delete(struct vm *vm)
     /* delete vcpu struct */
     for(int i = 0; i < vm->vcpu_num; i++){
         vcpu = vm->vcpus[i];
-        if(!vcpu) continue;
+        if(!vcpu) {
+            continue;
+        }
+        /* release the used physical cpu*/
+        vm_cpu_reset(vcpu->cpu);
+
         vwork = vcpu->work;
         if(vwork){
             k_free(vwork->vcpu_thread);
@@ -542,14 +547,8 @@ int z_parse_info_vm_args(size_t argc, char **argv, struct getopt_state *state)
 
 int z_list_vms_info(uint16_t vmid)
 {
-    /* if vmid equal to CONFIG_MAX_VM_NUM, list all vm */
-    if (vmid == CONFIG_MAX_VM_NUM) {
-        z_list_all_vms_info();
-    } else {
-        printk("\n|*********************** VM INFO *********************|\n");
-        printk("|***vmid name \t    vcpus    vmem(M)\tstatus ***|\n");
-        z_list_vm_info(vmid);
-    }
+    /* list all vm */
+    z_list_all_vms_info();
     printk("|*****************************************************|\n");
     return 0;
 }

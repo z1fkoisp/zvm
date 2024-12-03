@@ -419,6 +419,8 @@ static int privatize_page_range(struct arm_mmu_ptables *dst_pt,
 	return ret;
 }
 
+static uint32_t miss_table = 0;
+
 static void discard_table(uint64_t *table, unsigned int level)
 {
 	unsigned int i;
@@ -426,7 +428,9 @@ static void discard_table(uint64_t *table, unsigned int level)
 	for (i = 0U; Ln_XLAT_NUM_ENTRIES; i++) {
 		if (is_table_desc(table[i], level)) {
 			table_usage(pte_desc_table(table[i]), -1);
-			discard_table(pte_desc_table(table[i]), level + 1);
+			if (miss_table > 0xFFFFFFFF) {
+				discard_table(pte_desc_table(table[i]), level + 1);
+			}
 		}
 		if (!is_free_desc(table[i])) {
 			table[i] = 0U;

@@ -86,11 +86,13 @@
 			#interrupt-cells = <4>;
 			label = "GIC";
 			status = "okay";
+			#address-cells = <2>;
+			#size-cells = <2>;
 
 			gic_ist: its@8080000 {
 				compatible = "arm,gic-v3-its";
 				phandle = <0x8006>;
-				reg = <0x00 0x8080000 0x20000>;
+				reg = <0x00 0x8080000 0x00 0x20000>;
 				label = "GIC_ITS";
 				msi-controller;
 			};

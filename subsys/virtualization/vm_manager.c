@@ -227,16 +227,10 @@ int zvm_delete_guest(size_t argc, char **argv)
 
 int zvm_info_guest(size_t argc, char **argv)
 {
-	uint16_t vm_id;
 	int ret = 0;
 
-	vm_id = z_parse_info_vm_args(argc, argv, state);
-	if (!(BIT(vm_id) & zvm_overall_info->alloced_vmid) && vm_id != CONFIG_MAX_VM_NUM) {
-        ZVM_LOG_WARN("This vm is not exist!\n Please input zvm info to list vms! \n");
-		return -ENODEV;
-    }
 	if (zvm_overall_info->vm_total_num > 0) {
-		ret = z_list_vms_info(vm_id);
+		ret = z_list_vms_info(0);
 	}else{
 		ret = -ENODEV;
 	}

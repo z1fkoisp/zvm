@@ -47,9 +47,9 @@ int load_linux_image(struct vm_mem_domain *vmem_domain)
     uint64_t des_hpa = LINUX_VM_IMAGE_BASE;
     uint64_t per_size = 1048576; //1M
 
-    ZVM_LOG_INFO("1 image_num_m = %ld\n", num_m);
-    ZVM_LOG_INFO("1 image_src_hpa = 0x%lx\n", src_hpa);
-    ZVM_LOG_INFO("1 image_des_hpa = 0x%lx\n", des_hpa);
+    ZVM_LOG_INFO("1 image_num_m = %lld\n", num_m);
+    ZVM_LOG_INFO("1 image_src_hpa = 0x%llx\n", src_hpa);
+    ZVM_LOG_INFO("1 image_des_hpa = 0x%llx\n", des_hpa);
 
     while(num_m){
         z_phys_map((uint8_t **)&src_hva, (uintptr_t)src_hpa, per_size, K_MEM_CACHE_NONE | K_MEM_PERM_RW);
@@ -64,9 +64,9 @@ int load_linux_image(struct vm_mem_domain *vmem_domain)
     src_hpa = LINUX_VMRFS_BASE;
     des_hpa = LINUX_VMRFS_PHY_BASE;
 
-    ZVM_LOG_INFO("1 rf_num_m = %ld\n", num_m);
-    ZVM_LOG_INFO("1 rf_src_hpa = 0x%lx\n", src_hpa);
-    ZVM_LOG_INFO("1 rf_des_hpa = 0x%lx\n", des_hpa);
+    ZVM_LOG_INFO("1 rf_num_m = %lld\n", num_m);
+    ZVM_LOG_INFO("1 rf_src_hpa = 0x%llx\n", src_hpa);
+    ZVM_LOG_INFO("1 rf_des_hpa = 0x%llx\n", des_hpa);
 
     while(num_m){
         z_phys_map((uint8_t **)&src_hva, (uintptr_t)src_hpa, per_size, K_MEM_CACHE_NONE | K_MEM_PERM_RW);
