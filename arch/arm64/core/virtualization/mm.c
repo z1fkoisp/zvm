@@ -28,10 +28,10 @@ LOG_MODULE_DECLARE(ZVM_MODULE_NAME);
 
 static uint64_t vm_zephyr_xlat_tables[ZVM_ZEPHYR_VM_NUM][CONFIG_ZVM_ZEPHYR_MAX_XLAT_TABLES * Ln_XLAT_NUM_ENTRIES]\
 		__aligned(Ln_XLAT_NUM_ENTRIES * sizeof(uint64_t));
-uint16_t vm_zephyr_xlat_use_count[ZVM_ZEPHYR_VM_NUM][CONFIG_ZVM_ZEPHYR_MAX_XLAT_TABLES];
+static int vm_zephyr_xlat_use_count[ZVM_ZEPHYR_VM_NUM][CONFIG_ZVM_ZEPHYR_MAX_XLAT_TABLES];
 static uint64_t vm_linux_xlat_tables[ZVM_LINUX_VM_NUM][CONFIG_ZVM_LINUX_MAX_XLAT_TABLES * Ln_XLAT_NUM_ENTRIES]\
 		__aligned(Ln_XLAT_NUM_ENTRIES * sizeof(uint64_t));
-uint16_t vm_linux_xlat_use_count[ZVM_LINUX_VM_NUM][CONFIG_ZVM_LINUX_MAX_XLAT_TABLES];
+static int vm_linux_xlat_use_count[ZVM_LINUX_VM_NUM][CONFIG_ZVM_LINUX_MAX_XLAT_TABLES];
 static struct k_spinlock vm_xlat_lock;
 
 /**
@@ -255,6 +255,13 @@ static int vm_table_usage(uint64_t *table, int adjustment, uint32_t vmid)
 	return table_use;
 }
 
+static inline void vm_dec_table_ref(uint64_t *table, uint32_t vmid)
+{
+	int ref_unit = 0xFFFFFFFF;
+
+	vm_table_usage(table, -ref_unit, vmid);
+}
+
 static inline bool vm_is_table_unused(uint64_t *table, uint32_t vmid)
 {
 	return vm_table_usage(table, 0, vmid) == 1;
@@ -264,8 +271,9 @@ static uint64_t *vm_expand_to_table(uint64_t *pte, unsigned int level, uint32_t 
 {
 	uint64_t *table;
 
-	if(level >= XLAT_LAST_LEVEL)
+	if(level >= XLAT_LAST_LEVEL) {
 		__ASSERT(level < XLAT_LAST_LEVEL, "can't expand last level");
+	}
 
 	table = vm_new_table(vmid);
 
@@ -394,6 +402,43 @@ move_on:
 	return ret;
 }
 
+static void vm_del_mapping(uint64_t *table, uintptr_t virt, size_t size,
+			unsigned int level, uint32_t vmid)
+{
+	size_t step, level_size = 1ULL << LEVEL_TO_VA_SIZE_SHIFT(level);
+	uint64_t *pte, *subtable;
+
+	for ( ; size; virt += step, size -= step) {
+		step = level_size - (virt & (level_size - 1));
+		if (step > size) {
+			step = size;
+		}
+		pte = &table[XLAT_TABLE_VA_IDX(virt, level)];
+
+		if (vm_is_free_desc(*pte)) {
+			continue;
+		}
+
+		if (step != level_size && vm_is_block_desc(*pte)) {
+			/* need to split this block mapping */
+			vm_expand_to_table(pte, level, vmid);
+		}
+
+		if (vm_is_table_desc(*pte, level)) {
+			subtable = vm_pte_desc_table(*pte);
+			vm_del_mapping(subtable, virt, step, level + 1, vmid);
+			if (!vm_is_table_unused(subtable, vmid)) {
+				continue;
+			}
+			vm_dec_table_ref(subtable, vmid);
+		}
+
+		/* free this entry */
+		*pte = 0;
+		vm_table_usage(pte, -1, vmid);
+	}
+}
+
 /**
  * @brief un_map the vm's page table entry.
  */
@@ -457,13 +502,13 @@ static int vm_add_map(struct arm_mmu_ptables *ptables, const char *name,
 }
 
 static int vm_remove_map(struct arm_mmu_ptables *ptables, const char *name,
-				uintptr_t virt,size_t size,uint32_t vmid)
+				uintptr_t virt, size_t size, uint32_t vmid)
 {
 	k_spinlock_key_t key;
-	int ret;
+	int ret = 0;
 
 	key = k_spin_lock(&vm_xlat_lock);
-	ret = vm_set_mapping(ptables,virt,size,0,true,vmid);
+	vm_del_mapping(ptables->base_xlat_table, virt, size, BASE_XLAT_LEVEL, vmid);
 	k_spin_unlock(&vm_xlat_lock,key);
 	return ret;
 }
@@ -529,8 +574,7 @@ int arch_vm_mem_domain_partition_remove(struct k_mem_domain *domain,
 	struct arm_mmu_ptables *domain_ptables = &domain->arch.ptables;
 	struct k_mem_partition *ptn = &domain->partitions[partition_id];
 
-	ret =  vm_remove_map(domain_ptables,"vm-mmio-space",ptn->start,ptn->size,vmid);
-
+	ret =  vm_remove_map(domain_ptables, "vm-mmio-space", ptn->start, ptn->size, vmid);
 	return ret;
 }
 

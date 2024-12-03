@@ -39,8 +39,9 @@
 /**
  * @brief VM return values.
  */
-#define VM_IRQ_TO_VM_SUCCESS        (1)
-#define VM_IRQ_TO_VCPU_SUCCESS      (2)
+#define SET_IRQ_TO_VM_SUCCESS        (1)
+#define UNSET_IRQ_TO_VM_SUCCESS      (2)
+#define VM_IRQ_TO_VCPU_SUCCESS       (3)
 #define VM_IRQ_NUM_OUT              (99)
 
 #define _VCPU_STATE_READY        (BIT(0))

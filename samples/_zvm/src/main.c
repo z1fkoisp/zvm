@@ -1,8 +1,9 @@
 /*
- * Copyright 2021-2022 HNU-ESNL
- *
- * SPDX-License-Identifier: Apache-2.0
- */
+ * Copyright 2021-2022 HNU-ESNL
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #include <zephyr.h>
 #include <kernel.h>
 #include <sys/printk.h>
@@ -13,13 +14,22 @@
 #include <kernel/thread.h>
 #include <timing/timing.h>
 #include <sys/time_units.h>
-#include <virtualization/zvm.h>
 
-/* For test time slice vm change */
+static void zvm_print_log(void)
+{
+	printk("\n");
+	printk("\n");
+	printk("█████████╗    ██╗     ██╗    ███╗    ███╗  \n");
+	printk("╚════███╔╝    ██║     ██║    ████╗  ████║  \n");
+	printk("   ███╔╝      ╚██╗   ██╔╝    ██╔ ████╔██║  \n");
+	printk("  ██╔╝         ╚██  ██╔╝     ██║ ╚██╔╝██║  \n");
+	printk("█████████╗      ╚████╔╝      ██║  ╚═╝ ██║  \n");
+	printk("╚════════╝        ╚═╝        ╚═╝      ╚═╝  \n");
+
+}
+
 int main(int argc, char **argv)
 {
-	ZVM_LOG_INFO("--Init zvm successful! --\n");
-	ZVM_LOG_INFO("--Ready to input shell cmd to create and build vm!--\n");
-
+	zvm_print_log();
 	return 0;
 }

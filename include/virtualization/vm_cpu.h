@@ -65,4 +65,9 @@ void do_asm_vcpu_swap(struct k_thread *new_thread, struct k_thread *old_thread);
  */
 int vcpu_ipi_scheduler(uint32_t cpu_mask, uint32_t timeout);
 
+/**
+ * @brief reset the vm cpu to idle.
+ */
+void vm_cpu_reset(uint16_t cpu_id);
+
 #endif /* ZEPHYR_INCLUDE_ZVM_VM_CPU_H_ */

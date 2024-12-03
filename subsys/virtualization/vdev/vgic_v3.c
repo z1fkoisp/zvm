@@ -405,6 +405,7 @@ int vgicv3_raise_sgi(struct vcpu *vcpu, unsigned long sgi_value)
 	int i, bit, sgi_num=0;
 	uint32_t sgi_id, sgi_mode;
 	uint32_t target_list, aff1, aff2, aff3, tmp_id;
+	uint32_t target_vcpu_list = 0;
 	struct vcpu *target;
 	struct vm *vm = vcpu->vm;
 	k_spinlock_key_t key;
@@ -424,6 +425,7 @@ int vgicv3_raise_sgi(struct vcpu *vcpu, unsigned long sgi_value)
 			target->vcpuipi_count ++;
 			k_spin_unlock(&target->vcpu_lock, key);
 		}
+		arch_sched_ipi();
 	} else if (sgi_mode == SGI_SIG_TO_LIST) {
 		target_list = sgi_value & 0xffff;
 		aff1 = (sgi_value & (uint64_t)(0xffUL << 16)) >> 16;
@@ -433,6 +435,7 @@ int vgicv3_raise_sgi(struct vcpu *vcpu, unsigned long sgi_value)
 			if (sys_test_bit((uintptr_t)&target_list, bit)) {
 				/*Each cluster has CONFIG_MP_NUM_CPUS*/
 				tmp_id = aff1 * CONFIG_MP_NUM_CPUS + bit;
+				sys_set_bits((uintptr_t)&target_vcpu_list, BIT(tmp_id));
 				/*@TODO: May need modified to vm->vcpu_num. */
 				if(++sgi_num > CONFIG_MAX_VCPU_PER_VM || tmp_id >= CONFIG_MAX_VCPU_PER_VM) {
 					ZVM_LOG_WARN("The target cpu list is too long.");
@@ -445,11 +448,19 @@ int vgicv3_raise_sgi(struct vcpu *vcpu, unsigned long sgi_value)
 				k_spin_unlock(&target->vcpu_lock, key);
 			}
 		}
+		if(target_vcpu_list & BIT(tmp_id)) {
+			set_virq_to_vm(vcpu->vm, sgi_id);
+			/* Set vcpu flag include itself */
+			if(target_vcpu_list & ~BIT(tmp_id)) {
+				arch_sched_ipi();
+			}
+		} else {
+			arch_sched_ipi();
+		}
 	} else {
 		ZVM_LOG_WARN("Unsupported sgi signal.");
 		return -EVIRQ;
 	}
-	arch_sched_ipi();
 	return 0;
 }
 

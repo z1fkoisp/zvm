@@ -18,6 +18,7 @@
         linuxdebugger = "/soc/fiq-debugger";
         vmvirtmem = "/soc/virtmem@bf000000";
         vmshmemrw = "/soc/shmem_rw@bd000000";
+        zephyrcpy = "/soc/zephyr_cpy@5000000";
         linuxcpy = "/soc/linux_cpy@e0000000";
         linuxrfs = "/soc/linux_rootfs@bf000000";
 	};
@@ -153,6 +154,10 @@
             interrupts = <GIC_SPI 98 IRQ_TYPE_EDGE 0x2>;
             label = "VM_SHMEMRW";
             status = "okay";
+        };
+
+        zephyr_cpy@5000000 {
+            reg = <0x0 0x05000000 0x0 DT_SIZE_M(2)>;
         };
 
         linux_cpy@e0000000 {

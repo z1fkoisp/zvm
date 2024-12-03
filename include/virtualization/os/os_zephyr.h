@@ -20,6 +20,8 @@
 #define ZEPHYR_VM_IMAGE_SIZE    DT_REG_SIZE(DT_NODELABEL(zephyr_ddr))
 #define ZEPHYR_VMSYS_BASE       DT_PROP(DT_NODELABEL(zephyr_ddr), vm_reg_base)
 #define ZEPHYR_VMSYS_SIZE       DT_PROP(DT_NODELABEL(zephyr_ddr), vm_reg_size)
+#define ZEPHYR_VMCPY_BASE       DT_REG_ADDR(DT_ALIAS(zephyrcpy))
+#define ZEPHYR_VMCPY_SIZE       DT_REG_SIZE(DT_ALIAS(zephyrcpy))
 #define ZEPHYR_VM_VCPU_NUM      DT_PROP(DT_INST(0, zephyr_vm), vcpu_num)
 
 int load_zephyr_image(struct vm_mem_domain *vmem_domain);

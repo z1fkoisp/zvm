@@ -63,6 +63,7 @@
 #define VGICR_ISENABLER0		0x0100
 #define VGICR_ICENABLER0		0x0180
 #define VGICR_SGI_PENDING		0x0200
+#define VGICR_SGI_ICPENDING		0x0280
 #define VGICR_PIDR2				0xFFE8
 
 /* list register test and set */
@@ -268,6 +269,54 @@ static ALWAYS_INLINE void vgic_test_and_set_enable_bit(struct vcpu *vcpu, uint32
 					gicd = (struct virt_gic_gicd *)vgic_priv;
 					vgic_sysreg_write32(vgic_sysreg_read32(gicd->gicd_regs_base, VGICD_ICENABLERn) | ~BIT(bit),\
 					gicd->gicd_regs_base, VGICD_ICENABLERn);
+				}
+			}
+		}
+	}
+}
+
+/**
+ * @brief When VM write ispending or icpending flag, we
+ * should set/unset irq signal to VM.
+*/
+static ALWAYS_INLINE void vgic_test_and_set_pending_bit(struct vcpu *vcpu, uint32_t spi_nr_count,
+						uint32_t *value, uint32_t bit_size, bool enable, void *vgic_priv)
+{
+	int bit;
+	uint32_t reg_mem_addr = (uint64_t)value;
+	struct virt_gic_gicd *gicd = NULL;
+	struct virt_gic_gicr *gicr = NULL;
+
+	for (bit=0; bit<bit_size; bit++) {
+		if (sys_test_bit(reg_mem_addr, bit)) {
+			if (enable) {
+				if (spi_nr_count + bit >= VM_GLOBAL_VIRQ_NR) {
+					/* spi num is too big. */
+					return;
+				}
+				set_virq_to_vm(vcpu->vm, spi_nr_count + bit);
+				if(spi_nr_count < VM_LOCAL_VIRQ_NR){
+					gicr = (struct virt_gic_gicr *)vgic_priv;
+					vgic_sysreg_write32(vgic_sysreg_read32(gicr->gicr_sgi_reg_base, VGICR_SGI_PENDING) | BIT(bit),\
+					gicr->gicr_sgi_reg_base, VGICR_SGI_PENDING);
+				}else{
+					gicd = (struct virt_gic_gicd *)vgic_priv;
+					vgic_sysreg_write32(vgic_sysreg_read32(gicd->gicd_regs_base, VGICD_ISPENDRn) | BIT(bit),\
+					gicd->gicd_regs_base, VGICD_ISPENDRn);
+				}
+			} else {
+				if (spi_nr_count + bit >= VM_GLOBAL_VIRQ_NR) {
+					return;
+				}
+				unset_virq_to_vm(vcpu->vm, spi_nr_count + bit);
+				if(spi_nr_count < VM_LOCAL_VIRQ_NR){
+					gicr = (struct virt_gic_gicr *)vgic_priv;
+					vgic_sysreg_write32(vgic_sysreg_read32(gicr->gicr_sgi_reg_base, VGICR_SGI_ICPENDING) & ~BIT(bit),\
+					gicr->gicr_sgi_reg_base, VGICR_SGI_ICPENDING);
+				}else{
+					gicd = (struct virt_gic_gicd *)vgic_priv;
+					vgic_sysreg_write32(vgic_sysreg_read32(gicd->gicd_regs_base, VGICD_ICPENDRn) | ~BIT(bit),\
+					gicd->gicd_regs_base, VGICD_ICPENDRn);
 				}
 			}
 		}

@@ -52,6 +52,25 @@ int load_zephyr_image(struct vm_mem_domain *vmem_domain)
     ARG_UNUSED(blk);
     ARG_UNUSED(this_vm);
 
+    uint64_t *src_hva, des_hva;
+    uint64_t num_m = ZEPHYR_VM_IMAGE_SIZE / (1024 * 1024);
+    uint64_t src_hpa = ZEPHYR_VMCPY_BASE;
+    uint64_t des_hpa = ZEPHYR_VM_IMAGE_BASE;
+    uint64_t per_size = 1048576; //1M
+
+    ZVM_LOG_INFO("1 image_num_m = %lld\n", num_m);
+    ZVM_LOG_INFO("1 image_src_hpa = 0x%llx\n", src_hpa);
+    ZVM_LOG_INFO("1 image_des_hpa = 0x%llx\n", des_hpa);
+
+    while(num_m){
+        z_phys_map((uint8_t **)&src_hva, (uintptr_t)src_hpa, per_size, K_MEM_CACHE_NONE | K_MEM_PERM_RW);
+        z_phys_map((uint8_t **)&des_hva, (uintptr_t)des_hpa, per_size, K_MEM_CACHE_NONE | K_MEM_PERM_RW);
+        memcpy(des_hva, src_hva, per_size);
+        des_hpa += per_size;
+        src_hpa += per_size;
+        num_m--;
+    }
+
 #ifndef  CONFIG_VM_DYNAMIC_MEMORY
     ARG_UNUSED(this_vm);
     return ret;

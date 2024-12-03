@@ -365,6 +365,7 @@ struct vcpu *vm_vcpu_init(struct vm *vm, uint16_t vcpu_id, char *vcpu_name)
     sys_dlist_init(&vcpu->virq_block.active_irqs);
     ZVM_SPINLOCK_INIT(&vcpu->virq_block.spinlock);
     init_vcpu_virt_irq_desc(&vcpu->virq_block);
+    ZVM_SPINLOCK_INIT(&vcpu->vcpu_lock);
 
     if (vm->is_rtos) {
         vm_prio = VCPU_RT_PRIO;
@@ -409,9 +410,7 @@ struct vcpu *vm_vcpu_init(struct vm *vm, uint16_t vcpu_id, char *vcpu_name)
     }
 
     /* Just work on 4 cores system now */
-    if(++created_vm_num == CONFIG_MP_NUM_CPUS-1){
-        pcpu_num = CONFIG_MP_NUM_CPUS-1;
-    }
+    created_vm_num++;
     k_thread_cpu_mask_enable(tid, pcpu_num);
     vcpu->cpu = pcpu_num;
 #else
@@ -464,4 +463,9 @@ int vm_vcpu_halt(struct vcpu *vcpu)
 int vm_vcpu_reset(struct vcpu *vcpu)
 {
     return vcpu_state_switch(vcpu->work->vcpu_thread, _VCPU_STATE_RESET);
+}
+
+void vm_cpu_reset(uint16_t cpu_id)
+{
+    reset_idle_cpu(cpu_id);
 }
