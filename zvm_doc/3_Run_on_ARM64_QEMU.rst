@@ -38,14 +38,21 @@
 可以在使用如下方法拉取已经定制好的镜像：
 
 .. code:: shell
-    cd ../                            #返回到zvm_workspace
-    git clone https://gitee.com/hnu-esnl/zvm_vm_image.git
 
-随后将镜像放置代码仓指定位置：
+    git clone https://gitee.com/hnu-esnl/zvm_vm_image.git
+    
+切换到zvm_vm_image/qemu_max/linux/debian/目录下，生成debian.cpio.gz:
 
 .. code:: shell
 
-    git clone https://gitee.com/hnu-esnl/zvm_vm_image.git
+    cd zvm_vm_image/qemu_max/linux/debian/
+    ./merge.sh 
+
+
+随后返回zvm目录，将镜像放置代码仓指定位置：
+
+.. code:: shell
+
     cp -r zvm_vm_image/qemu_max/linux/*  zvm_config/qemu_platform/hub
     cp -r zvm_vm_image/qemu_max/zephyr/* zvm_config/qemu_platform/hub
 
