@@ -49,10 +49,11 @@
     ./merge.sh 
 
 
-随后返回zvm目录，将镜像放置代码仓指定位置：
+随后返回zvm工作区，将镜像放置代码仓指定位置：
 
 .. code:: shell
 
+    cd ~/zvm_workspace/zvm
     cp -r zvm_vm_image/qemu_max/linux/*  zvm_config/qemu_platform/hub
     cp -r zvm_vm_image/qemu_max/zephyr/* zvm_config/qemu_platform/hub
 
