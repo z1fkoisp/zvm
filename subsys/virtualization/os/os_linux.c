@@ -47,6 +47,7 @@ int load_linux_image(struct vm_mem_domain *vmem_domain)
     uint64_t des_hpa = LINUX_VM_IMAGE_BASE;
     uint64_t per_size = 1048576; //1M
 
+    ZVM_LOG_INFO("Linux Kernel Image Loading ...\n");
     ZVM_LOG_INFO("1 image_num_m = %lld\n", num_m);
     ZVM_LOG_INFO("1 image_src_hpa = 0x%llx\n", src_hpa);
     ZVM_LOG_INFO("1 image_des_hpa = 0x%llx\n", des_hpa);
@@ -54,16 +55,20 @@ int load_linux_image(struct vm_mem_domain *vmem_domain)
     while(num_m){
         z_phys_map((uint8_t **)&src_hva, (uintptr_t)src_hpa, per_size, K_MEM_CACHE_NONE | K_MEM_PERM_RW);
         z_phys_map((uint8_t **)&des_hva, (uintptr_t)des_hpa, per_size, K_MEM_CACHE_NONE | K_MEM_PERM_RW);
-        memcpy(des_hva, src_hva, per_size);
+        memcpy((void *)des_hva, src_hva, per_size);
+        z_phys_unmap((uint8_t *)src_hva, per_size);
         des_hpa += per_size;
         src_hpa += per_size;
         num_m--;
     }
 
-    num_m = LINUX_VMRFS_SIZE / (1024 * 1024);
-    src_hpa = LINUX_VMRFS_BASE;
-    des_hpa = LINUX_VMRFS_PHY_BASE;
+    ZVM_LOG_INFO("Linux Kernel Image Loaded !\n");
 
+    num_m = LINUX_VMDTB_SIZE / (1024 * 1024);
+    src_hpa = LINUX_VMDTB_BASE;
+    des_hpa = LINUX_DTB_MEM_BASE;
+
+    ZVM_LOG_INFO("Linux DTB Image Loading ...\n");
     ZVM_LOG_INFO("1 rf_num_m = %lld\n", num_m);
     ZVM_LOG_INFO("1 rf_src_hpa = 0x%llx\n", src_hpa);
     ZVM_LOG_INFO("1 rf_des_hpa = 0x%llx\n", des_hpa);
@@ -72,10 +77,34 @@ int load_linux_image(struct vm_mem_domain *vmem_domain)
         z_phys_map((uint8_t **)&src_hva, (uintptr_t)src_hpa, per_size, K_MEM_CACHE_NONE | K_MEM_PERM_RW);
         z_phys_map((uint8_t **)&des_hva, (uintptr_t)des_hpa, per_size, K_MEM_CACHE_NONE | K_MEM_PERM_RW);
         memcpy(des_hva, src_hva, per_size);
+        z_phys_unmap((uint8_t *)src_hva, per_size);
         des_hpa += per_size;
         src_hpa += per_size;
         num_m--;
     }
+
+    ZVM_LOG_INFO("Linux DTB Image Loaded !\n");
+
+    num_m = LINUX_VMRFS_SIZE / (1024 * 1024);
+    src_hpa = LINUX_VMRFS_BASE;
+    des_hpa = LINUX_VMRFS_PHY_BASE;
+
+    ZVM_LOG_INFO("Linux FS Image Loading ...\n");
+    ZVM_LOG_INFO("1 rf_num_m = %lld\n", num_m);
+    ZVM_LOG_INFO("1 rf_src_hpa = 0x%llx\n", src_hpa);
+    ZVM_LOG_INFO("1 rf_des_hpa = 0x%llx\n", des_hpa);
+
+    while(num_m){
+        z_phys_map((uint8_t **)&src_hva, (uintptr_t)src_hpa, per_size, K_MEM_CACHE_NONE | K_MEM_PERM_RW);
+        z_phys_map((uint8_t **)&des_hva, (uintptr_t)des_hpa, per_size, K_MEM_CACHE_NONE | K_MEM_PERM_RW);
+        memcpy((void *)des_hva, src_hva, per_size);
+        z_phys_unmap((uint8_t *)src_hva, per_size);
+        des_hpa += per_size;
+        src_hpa += per_size;
+        num_m--;
+    }
+
+    ZVM_LOG_INFO("Linux FS Image Loaded !\n");
 
 #ifndef  CONFIG_VM_DYNAMIC_MEMORY
     return ret;

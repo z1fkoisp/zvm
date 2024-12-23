@@ -128,6 +128,12 @@ int arch_vm_mem_domain_partition_remove(struct k_mem_domain *domain,
 					uint32_t partition_id, uint32_t vmid);
 
 /**
+ * @brief clean the partition data for vm.
+ */
+void arch_vm_mem_domain_partitions_clean(struct k_mem_domain *domain,
+					uint32_t partitions_num, uint32_t vmid);
+
+/**
  * @brief Architecture-specific hook for vm domain initialization.
  */
 int arch_mem_domain_init(struct k_mem_domain *domain);

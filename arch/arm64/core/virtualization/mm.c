@@ -310,7 +310,6 @@ static uint64_t *vm_expand_to_table(uint64_t *pte, unsigned int level, uint32_t 
 
 	/* Link the new table in place of the pte it replaces */
 	vm_set_pte_table_desc(pte, table, level);
-	vm_table_usage(table, 1, vmid);
 
 	return table;
 }
@@ -573,9 +572,25 @@ int arch_vm_mem_domain_partition_remove(struct k_mem_domain *domain,
 	int ret;
 	struct arm_mmu_ptables *domain_ptables = &domain->arch.ptables;
 	struct k_mem_partition *ptn = &domain->partitions[partition_id];
-
+	ZVM_LOG_INFO("PART_ADD: virt_start 0x%lx, size 0x%lx. \n", ptn->start, ptn->size);
 	ret =  vm_remove_map(domain_ptables, "vm-mmio-space", ptn->start, ptn->size, vmid);
 	return ret;
+}
+
+void arch_vm_mem_domain_partitions_clean(struct k_mem_domain *domain,
+				uint32_t partitions_num, uint32_t vmid)
+{
+	k_spinlock_key_t key;
+	uint32_t p_idx;
+
+	ARG_UNUSED(domain);
+
+	key = k_spin_lock(&vm_xlat_lock);
+	for(p_idx = 0; p_idx < partitions_num; p_idx++){
+		vm_zephyr_xlat_use_count[vmid][p_idx] = 0;
+	}
+	k_spin_unlock(&vm_xlat_lock,key);
+
 }
 
 int arch_vm_mem_domain_init(struct k_mem_domain *domain, uint32_t vmid)
