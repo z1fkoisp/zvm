@@ -168,3 +168,10 @@ int arch_dcache_all(int op)
 
 	return 0;
 }
+
+void arch_icache_flush_all(void)
+{
+	/* Invalidate all instruction caches to PoU */
+	__asm__ volatile ("ic	ialluis \n"
+					  "isb	sy " ::: );
+}

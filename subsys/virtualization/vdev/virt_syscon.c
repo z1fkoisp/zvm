@@ -86,8 +86,6 @@ static int syscon_vdev_mem_read(struct virt_dev *vdev, uint64_t addr, uint64_t *
 	read_value = sys_read32(addr);
 	*(uint32_t *)value = read_value;
 
-	ZVM_LOG_INFO("Syscon-%s Read:addr is %llx, value is %x\n", vdev->name, addr, read_value);
-
 	return 0;
 }
 
@@ -97,11 +95,8 @@ static int syscon_vdev_mem_write(struct virt_dev *vdev, uint64_t addr, uint64_t 
 
 	write_value = *(uint32_t *)value;
 	be_write_value = sys_read32(addr);
-	sys_write32(write_value, addr);
+	/* delete sys_write32(write_value, addr);  */
 	af_write_value = sys_read32(addr);
-
-	ZVM_LOG_INFO("Syscon-%s Write:addr is %llx, be_value is %x, ne_value is %x, af_value is %x\n",
-			 vdev->name, addr, be_write_value, write_value, af_write_value);
 
 	return 0;
 }

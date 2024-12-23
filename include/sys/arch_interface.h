@@ -1021,6 +1021,11 @@ void arch_dcache_disable(void);
 int arch_dcache_all(int op);
 
 /**
+ * @brief flush all the cache.
+ */
+void arch_icache_flush_all(void);
+
+/**
  *
  * @brief Write-back / Invalidate / Write-back + Invalidate d-cache lines
  *

@@ -160,6 +160,13 @@ int vm_create(struct z_vm_info *vm_info, struct vm *new_vm)
         return -EOVERFLOW;
     }
 
+    vm->reboot = false;
+    #if defined(CONFIG_SOC_RK3568)
+        vm->is_cache_tlb_clean = true;
+    #else
+        vm->is_cache_tlb_clean = false;
+    #endif
+
     vm->os = (struct os *)k_malloc(sizeof(struct os));
 	if (!vm->os) {
 		ZVM_LOG_WARN("Allocate memory for os error! \n");
@@ -307,7 +314,7 @@ int vm_vcpus_init(struct vm *vm)
 
     for(i = 0; i < vm->vcpu_num; i++){
         memset(vcpu_name, 0, VCPU_NAME_LEN);
-        snprintk(vcpu_name, VCPU_NAME_LEN-1, "%s-vcpu%d", vm->vm_name, i);
+        snprintk(vcpu_name, VCPU_NAME_LEN - 1, "%s-vcpu%d", vm->vm_name, i);
 
         vcpu = vm_vcpu_init(vm, i, vcpu_name);
 
@@ -450,6 +457,7 @@ int vm_delete(struct vm *vm)
             vm_virt_dev_remove(vm, vdev);
         }
     }
+    show_zvm_dev_lists();
 
     /* remove all the partition in the vmem_domain */
     ret = vm_mem_apart_remove(vmem_dm);
@@ -462,6 +470,12 @@ int vm_delete(struct vm *vm)
         }
         /* release the used physical cpu*/
         vm_cpu_reset(vcpu->cpu);
+
+#if defined(CONFIG_SOC_RK3568)
+        set_pcpu_cache_clean(vcpu->cpu);
+        arch_sched_ipi();
+        ZVM_LOG_INFO("Ready to clean VM's PCPU %d ...\n", vcpu->cpu);
+#endif
 
         vwork = vcpu->work;
         if(vwork){
@@ -477,7 +491,9 @@ int vm_delete(struct vm *vm)
     k_free(vm->arch);
     k_free(vm->vcpus);
     k_free(vm->vmem_domain);
-    if(vm->os->name) k_free(vm->os->name);
+    if(vm->os->name) {
+        k_free(vm->os->name);
+    }
     k_free(vm->os);
     zvm_overall_info->vms[vm->vmid] = NULL;
     k_free(vm);

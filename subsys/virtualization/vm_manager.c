@@ -103,6 +103,9 @@ int zvm_new_guest(size_t argc, char **argv)
 	ZVM_LOG_INFO("|******\t VM-NAME:     %s \t******| \n", new_vm->vm_name);
 	ZVM_LOG_INFO("|******\t VM-ID: \t %d \t\t******| \n", new_vm->vmid);
 	ZVM_LOG_INFO("|******\t VCPU NUM: \t %d \t\t******| \n", new_vm->vcpu_num);
+	for(int i =0; i < new_vm->vcpu_num ; i++){
+		ZVM_LOG_INFO("|******\t VCPU-%d: \tPCPU-%d \t\t******| \n", i, new_vm->vcpus[i]->cpu);
+	}
 
 	switch (new_vm->os->type) {
 	case OS_TYPE_LINUX:
@@ -206,7 +209,13 @@ int zvm_delete_guest(size_t argc, char **argv)
 	switch (vm->vm_status) {
 	case VM_STATE_RUNNING:
 		ZVM_LOG_INFO("This vm is running!\n Try to stop and delete it!\n");
+#if defined(CONFIG_SOC_RK3568)
+		vm_vcpus_pause(vm);
+		isb();
+		vm_delete(vm);
+#else
 		vm_vcpus_halt(vm);
+#endif
 		break;
 	case VM_STATE_PAUSE:
 		ZVM_LOG_INFO("This vm is paused!\n Just delete it!\n");

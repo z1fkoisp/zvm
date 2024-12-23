@@ -131,7 +131,7 @@ static int clk_syscon_vdev_mem_write(struct virt_dev *vdev, uint64_t addr, uint6
 
 	write_value = *(uint32_t *)value;
 	be_write_value = sys_read32(addr);
-	sys_write32(write_value, addr);
+	/* delete sys_write32(write_value, addr);  */
 	af_write_value = sys_read32(addr);
 
 	return 0;

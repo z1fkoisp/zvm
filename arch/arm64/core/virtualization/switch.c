@@ -21,6 +21,7 @@ LOG_MODULE_DECLARE(ZVM_MODULE_NAME);
 
 /* VM entry point */
 extern int guest_vm_entry(struct vcpu *vcpu,struct zvm_vcpu_context *context);
+extern int __asm_invalidate_tlb_all(uint32_t unused_param0, uint32_t unused_param1);
 
 static void vm_disable_daif(void)
 {
@@ -132,6 +133,17 @@ int arch_vcpu_run(struct vcpu *vcpu)
     if(vcpu->vm->reboot){
         vcpu_sysreg_load(vcpu);
         vcpu->vm->reboot=false;
+    }
+
+    /* Clean VM's tlb, icache*/
+    if(vcpu->vm->is_cache_tlb_clean){
+        vcpu->vm->is_cache_tlb_clean = false;
+        /* invalid icache*/
+        arch_icache_flush_all();
+        /* invalid tlb*/
+        __asm_invalidate_tlb_all(2, 2);
+        __asm_invalidate_tlb_all(1, 1);
+        isb();
     }
 
     switch_to_guest_sysreg(vcpu);
