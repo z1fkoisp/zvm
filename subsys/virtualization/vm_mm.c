@@ -20,7 +20,7 @@
 LOG_MODULE_DECLARE(ZVM_MODULE_NAME);
 
 
-struct k_spinlock vm_mem_domain_lock;
+static struct k_spinlock vm_mem_domain_lock;
 static uint8_t vm_max_partitions = CONFIG_MAX_DOMAIN_PARTITIONS;
 static struct k_spinlock z_vm_domain_lock;
 
@@ -454,6 +454,7 @@ static int vm_mem_domain_partition_add(struct vm_mem_domain *vmem_dm,
 		ret = -ENOSPC;
 		goto unlock_out;
 	}
+    /* ipa for stage-two address translation. */
 	domain->partitions[p_idx].start = part->start;
 	domain->partitions[p_idx].size = part->size;
 	domain->partitions[p_idx].attr = part->attr;
@@ -485,11 +486,14 @@ static int vm_mem_domain_partition_remove(struct vm_mem_domain *vmem_dm)
     key = k_spin_lock(&vm_mem_domain_lock);
 
 #ifdef CONFIG_ARCH_MEM_DOMAIN_SYNCHRONOUS_API
+    int used_partition_count = 0;
     for(p_idx = 0;p_idx < vm_max_partitions; p_idx++) {
         if(domain->partitions[p_idx].size != 0U){
             ret = arch_vm_mem_domain_partition_remove(domain,p_idx,vm->vmid);
+            used_partition_count++;
         }
     }
+    arch_vm_mem_domain_partitions_clean(domain, used_partition_count, vm->vmid);
 #endif
     k_free(domain);
     k_spin_unlock(&vm_mem_domain_lock,key);

@@ -332,8 +332,6 @@ int vcpu_thread_entry(struct vcpu *vcpu)
     return ret;
 }
 
-static int created_vm_num = 0;
-
 struct vcpu *vm_vcpu_init(struct vm *vm, uint16_t vcpu_id, char *vcpu_name)
 {
     uint16_t vm_prio;
@@ -390,7 +388,7 @@ struct vcpu *vm_vcpu_init(struct vm *vm, uint16_t vcpu_id, char *vcpu_name)
     /*TODO: In this stage, the thread is marked as a kernel thread,
     For system safe, we will modified it later.*/
     k_tid_t tid = k_thread_create(vwork->vcpu_thread, vwork->vt_stack,
-            VCPU_THREAD_STACKSIZE,(void *)vcpu_thread_entry, vcpu, NULL, NULL,
+            VCPU_THREAD_STACKSIZE, (void *)vcpu_thread_entry, vcpu, NULL, NULL,
 			vm_prio, 0, K_FOREVER);
     strcpy(tid->name, vcpu_name);
 
@@ -409,8 +407,6 @@ struct vcpu *vm_vcpu_init(struct vm *vm, uint16_t vcpu_id, char *vcpu_name)
         return NULL;
     }
 
-    /* Just work on 4 cores system now */
-    created_vm_num++;
     k_thread_cpu_mask_enable(tid, pcpu_num);
     vcpu->cpu = pcpu_num;
 #else
@@ -418,7 +414,6 @@ struct vcpu *vm_vcpu_init(struct vm *vm, uint16_t vcpu_id, char *vcpu_name)
 #endif /* CONFIG_SCHED_CPU_MASK */
 
     /* create a new thread and store it in work struct */
-    vwork->v_date = vcpu;
     vwork->vcpu_thread->vcpu_struct = vcpu;
 
     vcpu->work = vwork;
@@ -434,7 +429,7 @@ struct vcpu *vm_vcpu_init(struct vm *vm, uint16_t vcpu_id, char *vcpu_name)
     vcpu->waitq_flag = false;
 
     key = k_spin_lock(&vcpu->vm->vm_vcpu_id.vcpu_id_lock);
-    vcpu->vcpu_id = vcpu->vm->vm_vcpu_id.totle_vcpu_id++;
+    vcpu->vm->vm_vcpu_id.totle_vcpu_id++;
     k_spin_unlock(&vcpu->vm->vm_vcpu_id.vcpu_id_lock, key);
 
     if (arch_vcpu_init(vcpu)) {

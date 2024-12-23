@@ -137,9 +137,6 @@ struct __aligned(4) vcpu_work {
 
     /* vCPU thread */
     struct k_thread *vcpu_thread;
-
-    /* point to vcpu struct */
-    void *v_date;
 };
 
 /**
@@ -166,7 +163,7 @@ struct vm_desc {
 
 /**
  * @brief Record vm's vcpu num.
- * Recommend:Consider deleting
+ * Recommend: Consider deleting
  */
 struct vm_vcpu_num {
     uint16_t totle_vcpu_id;
@@ -190,6 +187,7 @@ struct vm {
     uint16_t vmid;
     char vm_name[VM_NAME_LEN];
     bool reboot;
+    bool is_cache_tlb_clean;
 
     uint32_t vm_status;
 	uint32_t vcpu_num;

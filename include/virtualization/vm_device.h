@@ -210,6 +210,25 @@ static inline void vdev_irq_callback_user_data_set(const struct device *dev,
 }
 
 /**
+ * @brief On rk3568 board, Linux must use UART2. So, we need to static allocate
+ * UART to Linux OS.
+ * @TODO: May be more flexible.
+ */
+static inline int os_device_allocation(char *os_name, char *vdev_name) {
+
+    if(!strcmp(os_name, "linux_os")) {
+        bool is_uart = strcmp(vdev_name, "UART2");
+        bool is_linuxdev = strcmp(vdev_name, "LINUXDEV");
+        return is_uart ^ is_linuxdev;
+    } else {
+        if(strcmp(vdev_name, "UART3")) {
+            return 0;
+        }
+    }
+    return 1;
+}
+
+/**
  * @brief Allocate device to vm, it will be called when device that will be
  * allocated to vm. Then, Set the device's irq for binding virt interrupt
  * with hardware interrupt.
@@ -253,7 +272,6 @@ int vm_vdev_pause(struct vcpu *vcpu);
  * 2. Rerun the fault code and access the physical device memory.
 */
 int handle_vm_device_emulate(struct vm *vm, uint64_t pa_addr);
-// int handle_vm_device_emulate(struct vm *vm, uint64_t pa_addr, int write, uint64_t *value);
 
 void virt_device_irq_callback_data_set(int irq, int priority, void *user_data);
 

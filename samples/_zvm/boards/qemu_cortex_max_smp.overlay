@@ -11,6 +11,7 @@
         zephyrcpy = "/soc/zephyr_cpy@60000000";
         linuxcpy = "/soc/linux_cpy@70000000";
         linuxrfs = "/soc/linux_rootfs@90000000";
+        linuxdtb = "/soc/linux_dtb@75000000";
         /*Passthrough device.*/
 		ptdevice1 = "/soc/pass_through_device/uart@9001000";
 		ptdevice2 = "/soc/pass_through_device/uart@9002000";
@@ -97,6 +98,10 @@
 
         linux_cpy@70000000 {
             reg = <0x0 0x70000000 0x0 DT_SIZE_M(64)>;
+        };
+
+        linux_dtb@75000000 {
+            reg = <0x0 0x75000000 0x0 DT_SIZE_M(2)>;
         };
 
         linux_rootfs@90000000 {

@@ -213,11 +213,12 @@ struct zvm_manage_info {
 void zvm_ipi_handler(void);
 void zvm_info_print(struct zvm_hwsys_info *sys_info);
 struct zvm_dev_lists* get_zvm_dev_lists(void);
+void show_zvm_dev_lists(void);
 
 int vm_create(struct z_vm_info *zvi, struct vm *vm);
 int load_os_image(struct vm *vm);
 
-static uint32_t used_cpus = 0;
+volatile static uint32_t used_cpus = 0;
 static struct k_spinlock cpu_mask_lock;
 
 static ALWAYS_INLINE int rt_get_idle_cpu(void) {
@@ -373,5 +374,33 @@ static ALWAYS_INLINE struct vm *get_vm_by_id(uint32_t vmid) {
     }
     return zvm_overall_info->vms[vmid];
 }
+
+static uint32_t pcpu_list[CONFIG_MP_NUM_CPUS] = {0};
+
+static ALWAYS_INLINE void set_all_cache_clean(){
+    for(int i = 0; i < CONFIG_MP_NUM_CPUS; i++){
+        pcpu_list[i] = 1;
+    }
+}
+
+static ALWAYS_INLINE void set_cpu_cache_clean(int pcpu_id){
+    pcpu_list[pcpu_id] = 1;
+}
+
+static ALWAYS_INLINE void reset_cache_clean(int pcpu_id){
+    pcpu_list[pcpu_id] = 0;
+}
+
+static ALWAYS_INLINE uint32_t get_cache_clean(int pcpu_id){
+    return pcpu_list[pcpu_id];
+}
+
+void set_pcpu_cache_clean(uint64_t cpu_id);
+
+void set_all_pcpu_cache_clean(void);
+
+int get_pcpu_cache_clean(uint64_t cpu_mpidr);
+
+void reset_pcpu_cache_clean(uint64_t cpu_mpidr);
 
 #endif /* ZEPHYR_INCLUDE_ZVM_H_ */

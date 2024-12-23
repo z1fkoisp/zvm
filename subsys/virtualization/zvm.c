@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <arch/cpu.h>
 #include <arch/arm64/lib_helpers.h>
+#include <cache.h>
 #include <sys/printk.h>
 #include <logging/log.h>
 #include <virtualization/zvm.h>
@@ -86,6 +87,17 @@ void zvm_ipi_handler(void)
             k_spin_unlock(&vcpu->vcpu_lock, key);
         }
     }
+
+#if defined(CONFIG_SOC_RK3568)
+    /* Clean VM's PCPU dcache*/
+    const uint64_t ipi_mpidr = GET_MPIDR();
+    if(get_pcpu_cache_clean(ipi_mpidr)){
+        cache_data_all(K_CACHE_INVD);
+        //printk("\nPCPU 0x%llx Cache Clean!", (ipi_mpidr & 0xFFF));
+        reset_pcpu_cache_clean(ipi_mpidr);
+        isb();
+    }
+#endif
 
 }
 
@@ -224,7 +236,7 @@ static int zvm_init_idle_device_1(const struct device *dev, struct virt_dev *vde
     vm_dev->priv_data = (void *)dev;
 
     ZVM_LOG_INFO("Init idle device %s successful! \n", vm_dev->name);
-    ZVM_LOG_INFO("The device's paddress is 0x%x, paddress is 0x%x, size is 0x%x, hirq is %d, virq is %d. \n",
+    ZVM_LOG_INFO("The device's paddress is 0x%x, vaddress is 0x%x, size is 0x%x, hirq is %d, virq is %d. \n",
             vm_dev->vm_vdev_paddr, vm_dev->vm_vdev_vaddr, vm_dev->vm_vdev_size, vm_dev->hirq, vm_dev->virq);
 
     sys_dnode_init(&vm_dev->vdev_node);
@@ -345,6 +357,50 @@ static int zvm_devices_list_init(void)
 struct zvm_dev_lists* get_zvm_dev_lists(void)
 {
     return &zvm_overall_dev_lists;
+}
+
+void show_zvm_dev_lists(void)
+{
+    bool chosen_flag=false;
+    struct  _dnode *d_node, *ds_node;
+    struct virt_dev *vm_dev;
+    struct zvm_dev_lists* vdev_list;
+
+    vdev_list = &zvm_overall_dev_lists;
+    SYS_DLIST_FOR_EACH_NODE_SAFE(&vdev_list->dev_idle_list, d_node, ds_node) {
+        vm_dev = CONTAINER_OF(d_node, struct virt_dev, vdev_node);
+        /* host uart device ? */
+        ZVM_LOG_INFO("** Device %s  is idle. \n", vm_dev->name);
+        chosen_flag=true;
+    }
+    SYS_DLIST_FOR_EACH_NODE_SAFE(&vdev_list->dev_used_list, d_node, ds_node) {
+        vm_dev = CONTAINER_OF(d_node, struct virt_dev, vdev_node);
+        /* host uart device ? */
+        ZVM_LOG_INFO("** Device %s  is used. \n", vm_dev->name);
+        chosen_flag=true;
+    }
+}
+
+void set_all_pcpu_cache_clean(void)
+{
+    set_all_cache_clean();
+}
+
+void set_pcpu_cache_clean(uint64_t cpu_id)
+{
+    set_cpu_cache_clean(cpu_id);
+}
+
+void reset_pcpu_cache_clean(uint64_t cpu_mpidr)
+{
+    uint64_t pcpu_id = (cpu_mpidr & 0xFFF) >> 8;
+    reset_cache_clean(pcpu_id);
+}
+
+int get_pcpu_cache_clean(uint64_t cpu_mpidr)
+{
+    uint64_t pcpu_id = (cpu_mpidr & 0xF00) >> 8;
+    return get_cache_clean(pcpu_id);
 }
 
 /*
