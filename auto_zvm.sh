@@ -64,9 +64,9 @@ elif [ "$OPS" = "${ops_array[1]}" ]; then
         -net none -pidfile qemu.pid -chardev stdio,id=con,mux=on \
         -serial chardev:con -mon chardev=con,mode=readline -serial pty -serial pty -smp cpus=4 \
         -device loader,file=$(pwd)/zvm_config/qemu_platform/hub/zephyr.bin,addr=0x60000000,force-raw=on \
-        -device loader,file=$(pwd)/zvm_config/qemu_platform/hub/Image_rfss,addr=0x70000000,force-raw=on \
-        -device loader,file=$(pwd)/zvm_config/qemu_platform/hub/linux-qemu-virt.dtb,addr=0xf2000000 \
-        -device loader,file=$(pwd)/zvm_config/qemu_platform/hub/debian.cpio.gz,addr=0x90000000 \
+        -device loader,file=$(pwd)/zvm_config/qemu_platform/hub/Image_withFS,addr=0x70000000,force-raw=on \
+        -device loader,file=$(pwd)/zvm_config/qemu_platform/hub/linux-qemu-virtio.dtb,addr=0xf2000000 \
+        -device loader,file=$(pwd)/zvm_config/qemu_platform/hub/debian/debian.cpio.gz,addr=0x90000000 \
         -kernel $(pwd)/build/zephyr/zvm_host.elf
 ### using gdb to connect it:
 # gdb-multiarch -q -ex 'file ./build/zephyr/zvm_host.elf' -ex 'target remote localhost:1234'
