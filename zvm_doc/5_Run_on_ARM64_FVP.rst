@@ -83,4 +83,4 @@
 
 `Prev>> 在RK3568上运行ZVM <https://gitee.com/openeuler/zvm/blob/master/zvm_doc/4_Run_on_ROC_RK3568_PC.rst>`__
 
-`Next>> 在RK3568上测试ZVM性能 <https://gitee.com/openeuler/zvm/blob/master/zvm_doc/6_Test_on_RK3568.rst>`__
+`Next>> 在RK3568上测试ZVM性能 <https://gitee.com/openeuler/zvm/blob/master/zvm_doc/6_Test_on_RK3568.md>`__
