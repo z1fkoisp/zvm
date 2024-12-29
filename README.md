@@ -66,7 +66,7 @@ ZVM目前支持兼容ARMv8架构的处理器芯片，包括：
 
 ZVM的性能测试在瑞芯微RK3568芯片上进行（开发板采用ROC-RK3568-PC），RK3568芯片是一款代表性的基于ARMv8.2架构（采用Cortex A55）的4核CPU国产SoC芯片。本次性能测试主要对比虚拟机操作系统（VM）在**裸板**（即RK3568裸板）和**ZVM**（即ZVM on RK3568）上的各种性能指标，包括系统线程的调度时延、中断处理时延、内核对象的操作时间、系统吞吐量等。本次测试采用的VM为Zephyr RTOS（3.7 LTS）和Debian（Linux 5.10内核），使用的测试集包括：1）Zephyr Latency  Measure测试集；2）Debian Cyclictest测试集；3）Zephyr Sys kernel测试集；4）Debian Unixbench测试集。前两个测试集关注VM的系统延迟，后两个测试集关注VM的整体性能，具体说明见下面测试链接中描述。
 
-- [Test ZVM on RK3568：https://gitee.com/openeuler/zvm/blob/master/zvm_doc/6_Test_on_RK3568.rst](https://gitee.com/openeuler/zvm/blob/master/zvm_doc/6_Test_on_RK3568.rst)
+- [Test ZVM on RK3568：https://gitee.com/openeuler/zvm/blob/master/zvm_doc/6_Test_on_RK3568.rst](https://gitee.com/openeuler/zvm/blob/master/zvm_doc/6_Test_on_RK3568.md)
 
 
 ## 交流与反馈
