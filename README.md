@@ -1,10 +1,10 @@
 # ZVM 开源文档
 
-[![License](https://img.shields.io/badge/license-Apache%202-blue.svg)](LICENSE)
+<span style="display: inline; vertical-align: middle;">
+    <img width="152" height="20"  src="https://gitee.com/openeuler/zvm/raw/master/zvm_doc/figure/ZVM_LICENSE.png"/>
+</span>
 
 ZVM（Zephyr-based Virtual Machine）是新一代Type 1.5 嵌入式RTOS虚拟化解决方案（hypervisor），它结合开源微内核实时操作系统 [Zephyr RTOS](https://github.com/zephyrproject-rtos/zephyr) 开发，能在单一硬件芯片上启动多个操作系统（Linux、Zephyr等），以构建安全隔离的多内核混合部署系统，为多OS和多任务处理提供实时且灵活的虚拟化支持。Type 1.5并不是实时性（Type 1）与灵活性（Type 2）之间的权衡，而是在实时性与灵活性方面都达到最佳状态，且不牺牲任何一方。
-
-<p align="center"><img width="330" height="250"  src="https://gitee.com/openeuler/zvm/raw/master/zvm_doc/figure/ZVM.jpeg"/>
 
 （1）ZVM并非附加于Zephyr RTOS之上，而是直接运行在硬件之上，不仅共享Zephyr RTOS内核的开源生态、驱动支持和调度能力（相比Type 1具有更高的灵活性），而且避免了Type 2因多层依赖导致的时延开销（相比Type 2具有更强的实时性）。
 
