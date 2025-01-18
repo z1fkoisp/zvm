@@ -2,7 +2,9 @@
 
 [![License](https://img.shields.io/badge/license-Apache%202-blue.svg)](LICENSE)
 
-ZVM（Zephyr-based Virtual Machine）是新一代Type 1.5 嵌入式RTOS虚拟化解决方案，它结合开源微内核实时操作系统 [Zephyr RTOS](https://github.com/zephyrproject-rtos/zephyr) 开发，能在单一硬件平台上启动多个操作系统，以构建安全隔离的多内核混合部署系统，为多OS和多任务处理提供实时与灵活的虚拟化支持。Type 1.5并不是实时性（Type 1）与灵活性（Type 2）之间的权衡，而是在实时性与灵活性方面都达到最佳状态，且不牺牲任何一方。
+ZVM（Zephyr-based Virtual Machine）是新一代Type 1.5 嵌入式RTOS虚拟化解决方案（hypervisor），它结合开源微内核实时操作系统 [Zephyr RTOS](https://github.com/zephyrproject-rtos/zephyr) 开发，能在单一硬件芯片上启动多个操作系统（Linux、Zephyr等），以构建安全隔离的多内核混合部署系统，为多OS和多任务处理提供实时且灵活的虚拟化支持。Type 1.5并不是实时性（Type 1）与灵活性（Type 2）之间的权衡，而是在实时性与灵活性方面都达到最佳状态，且不牺牲任何一方。
+
+<p align="center"><img width="330" height="250"  src="https://gitee.com/openeuler/zvm/raw/master/zvm_doc/figure/ZVM.jpeg"/>
 
 （1）ZVM并非附加于Zephyr RTOS之上，而是直接运行在硬件之上，不仅共享Zephyr RTOS内核的开源生态、驱动支持和调度能力（相比Type 1具有更高的灵活性），而且避免了Type 2因多层依赖导致的时延开销（相比Type 2具有更强的实时性）。
 
@@ -69,7 +71,8 @@ ZVM目前支持兼容ARMv8架构的处理器芯片，包括：
 
 ## ZVM性能测试结果
 
-ZVM的性能测试在瑞芯微RK3568芯片上进行（开发板采用ROC-RK3568-PC），RK3568芯片是一款代表性的基于ARMv8.2架构（采用Cortex A55）的4核CPU国产SoC芯片。本次性能测试主要对比虚拟机操作系统（VM）在**裸板**（即RK3568裸板）和**ZVM**（即ZVM on RK3568）上的各种性能指标，包括系统线程的调度时延、中断处理时延、内核对象的操作时间、系统吞吐量等。本次测试采用的VM为Zephyr RTOS（3.7 LTS）和Debian（Linux 5.10内核），使用的测试集包括：1）Zephyr Latency  Measure测试集；2）Debian Cyclictest测试集；3）Zephyr Sys kernel测试集；4）Debian Unixbench测试集。前两个测试集关注VM的系统延迟，后两个测试集关注VM的整体性能，具体说明见下面测试链接中描述。
+ZVM的性能测试在瑞芯微RK3568芯片上进行（开发板采用ROC-RK3568-PC），本次性能测试主要对比虚拟机操作系统（VM）在**裸板**（即RK3568裸板）和**ZVM**（即ZVM on RK3568）、
+**Xvisor**（Xvisor on RK3568）以及**KVM**（Linux-KVM on RK3568）上虚拟机的各种性能表现，具体说明见下面测试链接中描述。
 
 - [Test ZVM on RK3568：https://gitee.com/openeuler/zvm/blob/master/zvm_doc/6_Test_on_RK3568.rst](https://gitee.com/openeuler/zvm/blob/master/zvm_doc/6_Test_on_RK3568.md)
 
@@ -78,7 +81,7 @@ ZVM的性能测试在瑞芯微RK3568芯片上进行（开发板采用ROC-RK3568-
 
 扫码加入ZVM技术交流群：
 
-<p align="center"><img width="600" height="600"  src="https://gitee.com/openeuler/zvm/raw/master/zvm_doc/figure/weixinCode.jpg"/>
+<p align="center"><img width="350" height="350"  src="https://gitee.com/openeuler/zvm/raw/master/zvm_doc/figure/weixinCode.jpg"/>
 <p align="center">   ZVM技术交流微信群
 
 

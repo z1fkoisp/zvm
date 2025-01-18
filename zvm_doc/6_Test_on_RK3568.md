@@ -1,6 +1,12 @@
 在ROC_RK3568_PC上测试ZVM性能
 ======================
 
+ZVM的性能测试在瑞芯微RK3568芯片上进行（开发板采用ROC-RK3568-PC），RK3568芯片是一款代表性的基于ARMv8.2架构（采用Cortex A55）的4核CPU国产SoC芯片。
+本次性能测试主要对比虚拟机操作系统（VM）在**裸板**（即RK3568裸板）和**ZVM**（即ZVM on RK3568）、
+Xvisor（Xvisor on RK3568）以及KVM（Linux-KVM on RK3568）上虚拟机的各种性能表现，
+包括系统线程的调度时延、中断处理时延、内核对象的操作时间、系统吞吐量等。
+本次测试采用的VM为Zephyr RTOS（3.7 LTS）和Debian（Linux 5.10内核），使用的测试集包括：1）Zephyr Latency  Measure测试集；2）Debian Cyclictest测试集；3）Zephyr Sys kernel测试集；4）Debian Unixbench测试集。前两个测试集关注VM的系统延迟，后两个测试集关注VM的整体性能，具体说明见下面描述。
+
 #### 测试1：**Zephyr RTOS的延迟测试**
 
 我们分别在裸板、ZVM、Xvisor和Linux-KVM上运行Zephry RTOS，并在Zephyr RTOS中运行Zephyr Latency measure测试集，该基准测试测量选定内核功能的平均延迟，如线程上下文切换、中断处理、信号量收发的延迟，测试项的细节见：[Zephyr Latency measure](https://github.com/zephyrproject-rtos/zephyr/tree/main/tests/benchmarks/latency\_measure)中列出的基准项。
