@@ -74,14 +74,14 @@ ZVM目前支持兼容ARMv8架构的处理器芯片，包括：
 ZVM的性能测试在瑞芯微RK3568芯片上进行（开发板采用ROC-RK3568-PC），本次性能测试主要对比虚拟机操作系统（VM）在**裸板**（即RK3568裸板）和**ZVM**（即ZVM on RK3568）、
 **Xvisor**（Xvisor on RK3568）以及**KVM**（Linux-KVM on RK3568）上虚拟机的各种性能表现，具体说明见下面测试链接中描述。
 
-- [Test ZVM on RK3568：https://gitee.com/openeuler/zvm/blob/master/zvm_doc/6_Test_on_RK3568.rst](https://gitee.com/openeuler/zvm/blob/master/zvm_doc/6_Test_on_RK3568.md)
+- [Test ZVM on RK3568：https://gitee.com/openeuler/zvm/blob/master/zvm_doc/6_Test_on_RK3568.rst](https://gitee.com/openeuler/zvm/blob/master/zvm_doc/6_Test_on_RK3568.rst)
 
 
 ## 交流与反馈
 
 扫码加入ZVM技术交流群：
 
-<p align="center"><img width="240" height="240"  src="https://gitee.com/openeuler/zvm/raw/master/zvm_doc/figure/weixinCode.jpg"/>
+<p align="center"><img width="240" height="240"  src="https://gitee.com/openeuler/zvm/raw/master/zvm_doc/figure/weixinCode.png"/>
 <p align="center">   ZVM技术交流微信群
 
 
