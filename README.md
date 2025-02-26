@@ -4,7 +4,7 @@
     <img width="327" height="90"  src="https://gitee.com/openeuler/zvm/raw/master/zvm_doc/figure/ZVM_LICENSE.png"/>
 </span>
 
-ZVM（Zephyr-based Virtual Machine）是新一代Type 1.5 嵌入式RTOS虚拟化解决方案（Hypervisor），它结合开源微内核实时操作系统 [Zephyr RTOS](https://github.com/zephyrproject-rtos/zephyr) 开发，能在单一硬件芯片上启动多个操作系统（Linux、Zephyr等），构建安全隔离的多内核混合部署系统，为多OS和多任务处理提供实时且灵活的支持。Type 1.5并不是实时性（Type 1）与灵活性（Type 2）之间的权衡，而是在实时性与灵活性方面都达到最佳状态，且不牺牲任何一方。
+ZVM（Zephyr-based Virtual Machine）是新一代Type 1.5 嵌入式RTOS虚拟化解决方案（Hypervisor），它结合开源实时操作系统 [Zephyr RTOS](https://github.com/zephyrproject-rtos/zephyr) 开发，能在单一硬件芯片上启动多个操作系统（Linux、Zephyr等），构建安全隔离的多内核混合部署系统，为多OS和多任务处理提供实时且灵活的支持。Type 1.5并不是实时性（Type 1）与灵活性（Type 2）之间的权衡，而是在实时性与灵活性方面都达到最佳状态，且不牺牲任何一方。
 
 （1）ZVM并非附加于Zephyr RTOS之上，而是直接运行在硬件之上，不仅共享Zephyr RTOS内核的开源生态、驱动支持和调度能力（相比Type 1具有更高的灵活性），而且避免了Type 2因多层依赖导致的时延开销（相比Type 2具有更强的实时性）。
 
@@ -91,6 +91,8 @@ ZVM的性能测试在瑞芯微RK3568芯片上进行（开发板采用ROC-RK3568-
 
 **熊程来（openEuler SIG-Zephyr maintainer）**，邮箱：xiongcl@hnu.edu.cn
 
+**任慰（openEuler SIG-Zephyr maintainer）**，邮箱：dfrd-renw@dfmc.com.cn
+
 **胡星宇**，邮箱：huxingyu@hnu.edu.cn
 
 **王中甲**，邮箱：zjwang@hnu.edu.cn
@@ -101,11 +103,15 @@ ZVM的性能测试在瑞芯微RK3568芯片上进行（开发板采用ROC-RK3568-
 
 **王清桥**，邮箱：qingqiaowang@hnu.edu.cn
 
+**赵航**，邮箱：zhaohang15639535703@hnu.edu.cn
+
 **李宗军**，邮箱：lizongjun@phytium.com.cn
 
 **黄鹤**，邮箱：huanghe@phytium.com.cn
 
-**任慰（openEuler SIG-Zephyr maintainer）**，邮箱：dfrd-renw@dfmc.com.cn
+**郑应勇**，邮箱：yingyong.zheng@rock-chips.com
+
+**杨悦书**，邮箱：nickey.yang@rock-chips.com
 
 欢迎大家反馈开发中遇到的问题，可以联系上面邮箱或者加入技术交流群。
 
