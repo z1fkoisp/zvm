@@ -4,7 +4,7 @@
     <img width="327" height="90"  src="https://gitee.com/openeuler/zvm/raw/master/zvm_doc/figure/ZVM_LICENSE.png"/>
 </span>
 
-ZVM（Zephyr-based Virtual Machine）是新一代Type 1.5 嵌入式RTOS虚拟化解决方案（Hypervisor），它结合开源实时操作系统 [Zephyr RTOS](https://github.com/zephyrproject-rtos/zephyr) 开发，能在单一硬件芯片上启动多个操作系统（Linux、Zephyr等），构建安全隔离的多内核混合部署系统，为多OS和多任务处理提供实时且灵活的支持。Type 1.5并不是实时性（Type 1）与灵活性（Type 2）之间的权衡，而是在实时性与灵活性方面都达到最佳状态，且不牺牲任何一方。
+嵌入式实时虚拟机ZVM（Zephyr-based Virtual Machine）是新一代Type 1.5 嵌入式RTOS虚拟化解决方案（Hypervisor），它结合开源实时操作系统 [Zephyr RTOS](https://github.com/zephyrproject-rtos/zephyr) 开发，能在单一硬件芯片上启动多个操作系统（Linux、Zephyr等），构建安全隔离的多内核混合部署系统，为多OS和多任务处理提供实时且灵活的支持。Type 1.5并不是实时性（Type 1）与灵活性（Type 2）之间的权衡，而是在实时性与灵活性方面都达到最佳状态，且不牺牲任何一方。
 
 （1）ZVM并非附加于Zephyr RTOS之上，而是直接运行在硬件之上，不仅共享Zephyr RTOS内核的开源生态、驱动支持和调度能力（相比Type 1具有更高的灵活性），而且避免了Type 2因多层依赖导致的时延开销（相比Type 2具有更强的实时性）。
 
@@ -15,7 +15,7 @@ ZVM项目仓库中包含Zephyr RTOS内核、工具及虚拟化支持代码。
 
 ## 架构设计
 
-ZVM面向高性能嵌入式计算环境，提供嵌入式平台上操作系统级别的资源隔离和共享服务。可用于各种应用和行业领域，如工业控制、机器人、汽车电子、轨道交通等。ZVM架构图如下所示：
+ZVM面向高性能嵌入式计算环境，提供嵌入式平台上操作系统级别的资源隔离和共享服务。可用于各种应用和行业领域，如智能装备、工业控制、汽车电子等。ZVM架构图如下所示：
 
 <p align="center"><img width="540" height="450"  src="https://gitee.com/openeuler/zvm/raw/master/zvm_doc/figure/overview.png"/>
 
