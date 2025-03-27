@@ -44,7 +44,7 @@ int load_zephyr_image(struct vm_mem_domain *vmem_domain)
     ARG_UNUSED(dbuf);
     ARG_UNUSED(sbuf);
     int ret = 0;
-    uint64_t zbase_size,zimage_base,zimage_size;
+    uint64_t entry,zimage_base,zimage_size;
     struct _dnode *d_node, *ds_node;
     struct vm_mem_partition *vpart;
     struct vm_mem_block *blk;
@@ -80,13 +80,15 @@ int load_zephyr_image(struct vm_mem_domain *vmem_domain)
     return ret;
 #endif /* CONFIG_VM_DYNAMIC_MEMORY */
 
-    zbase_size = ZEPHYR_VMSYS_SIZE;
+    entry = ZEPHYR_VMSYS_BASE;
     zimage_base = zvm_mapped_zephyr_image();
-    zimage_size = ZEPHYR_VM_IMAGE_SIZE;
+    zimage_size = ZEPHYR_VM_IMAGE_SIZE;     
     SYS_DLIST_FOR_EACH_NODE_SAFE(&vmem_domain->mapped_vpart_list,d_node,ds_node){
         vpart = CONTAINER_OF(d_node,struct vm_mem_partition,vpart_node);
-        if(vpart->part_hpa_size == zbase_size){
+        if(vpart->part_hpa_size == ZEPHYR_VMSYS_SIZE){
             memcpy((void *)vpart->part_hpa_base,(const void *)zimage_base,zimage_size);
+            arch_mmap_vpart_to_block(vmem_domain->vm_mm_domain,vpart->part_hpa_base,
+                                    entry,zimage_size,MT_VM_NORMAL_MEM,false,this_vm->vmid);
             break;
         }
     }

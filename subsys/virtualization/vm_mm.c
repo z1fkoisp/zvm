@@ -84,6 +84,66 @@ static struct vm_mem_partition *alloc_vm_mem_partition(uint64_t hpbase,
     return vpart;
 }
 
+
+
+/**
+ * @brief Alloc memory block for this vpart, direct use current address.
+ */
+static int alloc_vm_mem_block(struct vm_mem_domain *vmem_dm,
+    struct vm_mem_partition *vpart)
+{
+    int i, ret = 0;
+    uint64_t vpart_vbase,vpart_pbase, blk_count,msize,unit_msize,image_size;
+    struct vm_mem_block *block;
+    struct vm *vm = vmem_dm->vm;
+
+    switch(vm->os->type) {
+        case OS_TYPE_LINUX:
+            msize = vpart->vm_mm_partition->size - LINUX_IMAGE_VMRFS_SIZE;
+            image_size = LINUX_IMAGE_VMRFS_SIZE;
+            unit_msize = LINUX_VM_BLOCK_SIZE;
+            break;
+        case OS_TYPE_ZEPHYR:
+            msize = vpart->vm_mm_partition->size - ZEPHYR_VM_IMAGE_SIZE;
+            image_size = ZEPHYR_VM_IMAGE_SIZE;
+            unit_msize = ZEPHYR_VM_BLOCK_SIZE;
+            break;
+        default:
+            unit_msize = DEFAULT_VM_BLOCK_SIZE;
+            ZVM_LOG_WARN("Unknown os type!");
+            break;
+    }
+
+    vpart_vbase = vpart->vm_mm_partition->start + image_size;
+    vpart_pbase = vpart->part_hpa_base + image_size;
+    /* Add flag for blk map, set size as 64k(2M) block */
+    blk_count = msize / unit_msize;
+
+    /* allocate physical memory for block */
+    for (i = 0; i < blk_count; i++) {
+        /* allocate block for block struct*/
+        block = (struct vm_mem_block *)k_malloc(sizeof(struct vm_mem_block));
+        if (block == NULL) {
+            return -EMMAO;
+        }
+        memset(block, 0, sizeof(struct vm_mem_block));
+
+        /* init block pointer for vm */
+        block->phy_base  = vpart_pbase + unit_msize*i;
+        block->virt_base = vpart_vbase + unit_msize*i;
+        /* get the block number */
+        block->cur_blk_offset = i;
+        /* No physical base */
+        block->phy_pointer = NULL;
+
+        sys_dlist_append(&vpart->blk_list, &block->vblk_node);
+    }
+
+    return ret;
+}
+
+
+
 /**
  * @brief init vpart from default device tree.
  */
@@ -101,6 +161,11 @@ static int create_vm_mem_vpart(struct vm_mem_domain *vmem_domain, uint64_t hpbas
 
     ret = add_idle_vpart(vmem_domain, vpart);
 
+#ifdef CONFIG_VM_DYNAMIC_MEMORY
+    if(vpart->vm_mm_partition->start == LINUX_VMSYS_BASE || vpart->vm_mm_partition->start == ZEPHYR_VMSYS_BASE)
+        ret =  alloc_vm_mem_block(vmem_domain, vpart);
+#endif
+
     return ret;
 }
 
@@ -109,9 +174,9 @@ static int vm_ram_mem_create(struct vm_mem_domain *vmem_domain)
     int ret = 0;
     int type = OS_TYPE_MAX;
     uint64_t va_base, pa_base, kpa_base, size;
-    struct  _dnode *d_node, *ds_node;
+    // struct  _dnode *d_node, *ds_node;
     struct vm *vm = vmem_domain->vm;
-    struct vm_mem_partition *vpart;
+    // struct vm_mem_partition *vpart;
 
     type = vm->os->type;
     switch (type) {
@@ -119,14 +184,14 @@ static int vm_ram_mem_create(struct vm_mem_domain *vmem_domain)
         va_base = LINUX_VMSYS_BASE;
         size = LINUX_VMSYS_SIZE;
 #ifdef CONFIG_VM_DYNAMIC_MEMORY
-        kpa_base = (uint64_t)k_malloc(size + CONFIG_MMU_PAGE_SIZE);
+        kpa_base = (uint64_t)k_malloc(LINUX_IMAGE_VMRFS_SIZE + CONFIG_MMU_PAGE_SIZE);
         if(kpa_base == 0){
             ZVM_LOG_ERR("The heap memory is not enough\n");
             return -EMMAO;
         }
         pa_base = z_mem_phys_addr((void *)ROUND_UP(kpa_base, CONFIG_MMU_PAGE_SIZE));
 #else
-        ARG_UNUSED(vpart);
+        // ARG_UNUSED(vpart);
         ARG_UNUSED(kpa_base);
         pa_base = LINUX_VM_IMAGE_BASE;
 #endif
@@ -135,17 +200,17 @@ static int vm_ram_mem_create(struct vm_mem_domain *vmem_domain)
         va_base = ZEPHYR_VMSYS_BASE;
         size = ZEPHYR_VMSYS_SIZE;
 #ifdef CONFIG_VM_DYNAMIC_MEMORY
-        kpa_base = (uint64_t)k_malloc(size + CONFIG_MMU_PAGE_SIZE);
+        kpa_base = (uint64_t)k_malloc(ZEPHYR_VM_IMAGE_SIZE + CONFIG_MMU_PAGE_SIZE);
         if(kpa_base == 0){
             ZVM_LOG_ERR("The heap memory is not enough\n");
             return -EMMAO;
         }
         pa_base = z_mem_phys_addr((void *)ROUND_UP(kpa_base, CONFIG_MMU_PAGE_SIZE));
 #else
-        ARG_UNUSED(vpart);
+        // ARG_UNUSED(vpart);
         ARG_UNUSED(kpa_base);
-        ARG_UNUSED(d_node);
-        ARG_UNUSED(ds_node);
+        // ARG_UNUSED(d_node);
+        // ARG_UNUSED(ds_node);
         pa_base = ZEPHYR_VM_IMAGE_BASE;
 #endif
         break;
@@ -155,7 +220,7 @@ static int vm_ram_mem_create(struct vm_mem_domain *vmem_domain)
     }
 
     ret =  create_vm_mem_vpart(vmem_domain, pa_base, va_base, size, MT_VM_NORMAL_MEM);
-
+/*
 #ifdef CONFIG_VM_DYNAMIC_MEMORY
     SYS_DLIST_FOR_EACH_NODE_SAFE(&vmem_domain->idle_vpart_list,d_node,ds_node){
         vpart = CONTAINER_OF(d_node,struct vm_mem_partition,vpart_node);
@@ -165,6 +230,7 @@ static int vm_ram_mem_create(struct vm_mem_domain *vmem_domain)
         }
     }
 #endif
+*/
     return ret;
 }
 
@@ -248,69 +314,40 @@ int vm_vdev_mem_create(struct vm_mem_domain *vmem_domain, uint64_t hpbase,
     return create_vm_mem_vpart(vmem_domain, hpbase, ipbase, size, attrs);
 }
 
-// int map_vpart_to_block(struct vm_mem_domain *vmem_domain,
-//             struct vm_mem_partition *vpart, uint64_t unit_msize)
-// {
-//     ARG_UNUSED(unit_msize);
-//     int ret = 0;
-//     uint64_t vm_mem_size;
+int map_vpart_to_block(struct vm_mem_domain *vmem_domain,
+    struct vm_mem_partition *vpart)
+{
+    int ret = 0;
+    uint64_t vm_mem_size;
 
-//     struct vm_mem_block *blk;
-//     struct  _dnode *d_node, *ds_node;
-//     struct vm *vm = vmem_domain->vm;
+    struct vm_mem_block *blk;
+    struct  _dnode *d_node, *ds_node;
+    struct vm *vm = vmem_domain->vm;
 
-//     switch (vm->os->type) {
-//     case OS_TYPE_LINUX:
-//         vm_mem_size = LINUX_VM_BLOCK_SIZE;
-//         break;
-//     case OS_TYPE_ZEPHYR:
-//         vm_mem_size = ZEPHYR_VM_BLOCK_SIZE;
-//         break;
-//     default:
-//         vm_mem_size = DEFAULT_VM_BLOCK_SIZE;
-//         ZVM_LOG_WARN("Unknow os type!");
-//         break;
-//     }
+    switch (vm->os->type) {
+        case OS_TYPE_LINUX:
+            vm_mem_size = LINUX_VM_BLOCK_SIZE;
+            break;
+        case OS_TYPE_ZEPHYR:
+            vm_mem_size = ZEPHYR_VM_BLOCK_SIZE;
+            break;
+        default:
+            vm_mem_size = DEFAULT_VM_BLOCK_SIZE;
+            ZVM_LOG_WARN("Unknown os type!");
+            break;
+    }
 
-// #ifdef CONFIG_VM_DYNAMIC_MEMORY
-//     uint64_t base_addr = vpart->area_start;
-//     uint64_t size = vpart->area_size;
-//     uint64_t virt_offset;
+    SYS_DLIST_FOR_EACH_NODE_SAFE(&vpart->blk_list, d_node, ds_node){
+        blk = CONTAINER_OF(d_node, struct vm_mem_block, vblk_node);
 
-//     SYS_DLIST_FOR_EACH_NODE_SAFE(&vpart->blk_list, d_node, ds_node){
-//         blk = CONTAINER_OF(d_node, struct vm_mem_block, vblk_node);
+        /* add mapping from virt to block physcal address */
+        ret = arch_mmap_vpart_to_block(vmem_domain->vm_mm_domain, blk->phy_base, blk->virt_base,
+                                    vm_mem_size, MT_VM_NORMAL_MEM, true, vm->vmid);
 
-//         /* find the virt address for this block */
-//         virt_offset = base_addr + (blk->cur_blk_offset * vm_mem_size);
+    }
 
-//         size = vm_mem_size;
-
-//         /* add mapping from virt to block physcal address */
-//         ret = arch_mmap_vpart_to_block(blk->phy_base, virt_offset, size, MT_VM_NORMAL_MEM);
-
-//     }
-// #else
-//     SYS_DLIST_FOR_EACH_NODE_SAFE(&vpart->blk_list, d_node, ds_node){
-//         blk = CONTAINER_OF(d_node, struct vm_mem_block, vblk_node);
-
-//         if (blk->cur_blk_offset) {
-//             continue;
-//         }else{
-//             ret = arch_mmap_vpart_to_block(blk->phy_base, vpart->area_start,
-//                 vpart->area_size, MT_VM_NORMAL_MEM);
-//             if (ret) {
-//                 return ret;
-//             }
-//         }
-//         break;
-//     }
-// #endif /* CONFIG_VM_DYNAMIC_MEMORY */
-//     /* get the pgd table */
-//     vm->arch->vm_pgd_base = (uint64_t)
-//             vm->vmem_domain->vm_mm_domain->arch.ptables.base_xlat_table;
-
-//     return ret;
-// }
+    return ret;
+}
 
 
 /**
@@ -461,7 +498,15 @@ static int vm_mem_domain_partition_add(struct vm_mem_domain *vmem_dm,
 	domain->num_partitions++;
 
 #ifdef CONFIG_ARCH_MEM_DOMAIN_SYNCHRONOUS_API
+#ifndef CONFIG_VM_DYNAMIC_MEMORY
 	ret = arch_vm_mem_domain_partition_add(domain, p_idx, phys_start, vm->vmid);
+#else 
+    if(vpart->vm_mm_partition->start == LINUX_VMSYS_BASE || vpart->vm_mm_partition->start == ZEPHYR_VMSYS_BASE)
+        //ret = map_vpart_to_block(vmem_dm, vpart);
+        ;
+    else 
+        ret = arch_vm_mem_domain_partition_add(domain, p_idx, phys_start, vm->vmid);
+#endif
 #endif /* CONFIG_ARCH_MEM_DOMAIN_SYNCHRONOUS_API */
 
 unlock_out:

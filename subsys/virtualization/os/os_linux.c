@@ -10,41 +10,57 @@
 #include <virtualization/os/os_linux.h>
 
 
-static atomic_t zvm_linux_image_map_init = ATOMIC_INIT(0);
-static uint64_t zvm_linux_image_map_phys = 0;
+// static atomic_t zvm_linux_image_map_init = ATOMIC_INIT(0);
+// static uint64_t zvm_linux_image_map_phys = 0;
 
-/**
- * @brief Establish a mapping between the linux image physical
- * addresses and virtual addresses.
- */
-static uint64_t zvm_mapped_linux_image(void)
-{
-    uint8_t *ptr;
-    uintptr_t phys;
-    size_t size;
-    uint32_t flags;
-    if(likely(!atomic_cas(&zvm_linux_image_map_init, 0, 1))){
-        return zvm_linux_image_map_phys;
-    }
+// /**
+//  * @brief Establish a mapping between the linux image physical
+//  * addresses and virtual addresses.
+//  */
+// static uint64_t zvm_mapped_linux_image(void)
+// {
+//     uint8_t *ptr;
+//     uintptr_t phys;
+//     size_t size;
+//     uint32_t flags;
+//     if(likely(!atomic_cas(&zvm_linux_image_map_init, 0, 1))){
+//         return zvm_linux_image_map_phys;
+//     }
 
-    phys = LINUX_VM_IMAGE_BASE;
-    size = LINUX_VM_IMAGE_SIZE;
-    flags = K_MEM_CACHE_NONE | K_MEM_PERM_RW | K_MEM_PERM_EXEC;
-    z_phys_map(&ptr, phys, size, flags);
-    zvm_linux_image_map_phys = (uint64_t)ptr;
-    return zvm_linux_image_map_phys;
-}
+//     phys = LINUX_VM_IMAGE_BASE;
+//     size = LINUX_VM_IMAGE_SIZE;
+//     flags = K_MEM_CACHE_NONE | K_MEM_PERM_RW | K_MEM_PERM_EXEC;
+//     z_phys_map(&ptr, phys, size, flags);
+//     zvm_linux_image_map_phys = (uint64_t)ptr;
+//     return zvm_linux_image_map_phys;
+// }
 
 int load_linux_image(struct vm_mem_domain *vmem_domain)
 {
     int ret = 0;
-    uint64_t lbase_size, limage_base, limage_size;
+    uint64_t entry, limage_size;
     struct _dnode *d_node, *ds_node;
     struct vm_mem_partition *vpart;
-    uint64_t *src_hva, des_hva;
+    struct vm *this_vm = vmem_domain->vm;
+    uint64_t *src_hva, des_hva, des_hpa, total_des_hpa;
     uint64_t num_m = LINUX_VM_IMAGE_SIZE / (1024 * 1024);
     uint64_t src_hpa = LINUX_VMCPY_BASE;
-    uint64_t des_hpa = LINUX_VM_IMAGE_BASE;
+#ifndef CONFIG_VM_DYNAMIC_MEMORY
+    des_hpa = LINUX_VM_IMAGE_BASE;
+#else 
+    entry = LINUX_VMSYS_BASE;
+    limage_size = LINUX_IMAGE_VMRFS_SIZE;
+    SYS_DLIST_FOR_EACH_NODE_SAFE(&vmem_domain->mapped_vpart_list,d_node,ds_node){
+        vpart = CONTAINER_OF(d_node,struct vm_mem_partition,vpart_node);
+        if(vpart->part_hpa_size == LINUX_VMSYS_SIZE){
+            des_hpa = vpart->part_hpa_base;
+            total_des_hpa = vpart->part_hpa_base;
+            arch_mmap_vpart_to_block(vmem_domain->vm_mm_domain, vpart->part_hpa_base,
+                entry, limage_size, MT_VM_NORMAL_MEM, false, this_vm->vmid);
+            break;
+        }
+    }
+#endif
     uint64_t per_size = 1048576; //1M
 
     ZVM_LOG_INFO("Linux Kernel Image Loading ...\n");
@@ -87,7 +103,11 @@ int load_linux_image(struct vm_mem_domain *vmem_domain)
 
     num_m = LINUX_VMRFS_SIZE / (1024 * 1024);
     src_hpa = LINUX_VMRFS_BASE;
+#ifndef CONFIG_VM_DYNAMIC_MEMORY
     des_hpa = LINUX_VMRFS_PHY_BASE;
+#else 
+    des_hpa = total_des_hpa + 0x9000000;
+#endif
 
     ZVM_LOG_INFO("Linux FS Image Loading ...\n");
     ZVM_LOG_INFO("1 rf_num_m = %lld\n", num_m);
@@ -106,20 +126,20 @@ int load_linux_image(struct vm_mem_domain *vmem_domain)
 
     ZVM_LOG_INFO("Linux FS Image Loaded !\n");
 
-#ifndef  CONFIG_VM_DYNAMIC_MEMORY
-    return ret;
-#endif /* CONFIG_VM_DYNAMIC_MEMORY */
+// #ifndef  CONFIG_VM_DYNAMIC_MEMORY
+//     return ret;
+// #endif /* CONFIG_VM_DYNAMIC_MEMORY */
 
-    lbase_size =  LINUX_VMSYS_SIZE;
-    limage_base = zvm_mapped_linux_image();
-    limage_size = LINUX_VM_IMAGE_SIZE;
-    SYS_DLIST_FOR_EACH_NODE_SAFE(&vmem_domain->mapped_vpart_list,d_node,ds_node){
-        vpart = CONTAINER_OF(d_node,struct vm_mem_partition,vpart_node);
-        if(vpart->part_hpa_size == lbase_size){
-            memcpy((void *)vpart->part_hpa_base, (const void *)limage_base, limage_size);
-            break;
-        }
-    }
+//     lbase_size =  LINUX_VMSYS_SIZE;
+//     limage_base = zvm_mapped_linux_image();
+//     limage_size = LINUX_VM_IMAGE_SIZE;
+//     SYS_DLIST_FOR_EACH_NODE_SAFE(&vmem_domain->mapped_vpart_list,d_node,ds_node){
+//         vpart = CONTAINER_OF(d_node,struct vm_mem_partition,vpart_node);
+//         if(vpart->part_hpa_size == lbase_size){
+//             memcpy((void *)vpart->part_hpa_base, (const void *)limage_base, limage_size);
+//             break;
+//         }
+//     }
 
     return ret;
 }

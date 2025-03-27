@@ -117,7 +117,7 @@ struct vm_mem_domain {
  * @param vpart : vpart for each task
  * @return int : 0--success, other for error code.
  */
-int map_vpart_to_block(struct vm_mem_domain *vmem_domain, struct vm_mem_partition *vpart, uint64_t unit_msize);
+int map_vpart_to_block(struct vm_mem_domain *vmem_domain, struct vm_mem_partition *vpart);
 int unmap_vpart_to_block(struct vm_mem_domain *vmem_domain, struct vm_mem_partition *vpart);
 
 /**

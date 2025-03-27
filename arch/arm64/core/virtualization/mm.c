@@ -193,10 +193,11 @@ static inline bool vm_is_block_desc(uint64_t desc)
 	return (desc & PTE_DESC_TYPE_MASK) == PTE_BLOCK_DESC;
 }
 
-static void vm_set_pte_block_desc(uint64_t *pte, uint64_t desc, unsigned int level)
+static void vm_set_pte_block_desc(uint64_t *pte, uint64_t desc, unsigned int level,bool invalid)
 {
 	if (desc) {
 		desc |= (level == XLAT_LAST_LEVEL) ? PTE_PAGE_DESC : PTE_BLOCK_DESC;
+		if(invalid && level == XLAT_LAST_LEVEL) desc &= PTE_INVALID_DESC;
 	}
 	*pte = desc;
 }
@@ -315,8 +316,8 @@ static uint64_t *vm_expand_to_table(uint64_t *pte, unsigned int level, uint32_t 
 }
 
 static int vm_set_mapping(struct arm_mmu_ptables *ptables,\
-		       uintptr_t virt, size_t size,\
-		       uint64_t desc, bool may_overwrite, uint32_t vmid)
+	uintptr_t virt, size_t size,\
+	uint64_t desc, bool may_overwrite, bool invalid, uint32_t vmid)
 {
 	uint64_t *pte, *ptes[XLAT_LAST_LEVEL + 1];
 	uint64_t level_size;
@@ -326,7 +327,7 @@ static int vm_set_mapping(struct arm_mmu_ptables *ptables,\
 
 	while (size) {
 		__ASSERT(level <= XLAT_LAST_LEVEL,
-			 "max translation table level exceeded\n");
+		"max translation table level exceeded\n");
 
 		/* Locate PTE for given virtual address and page table level */
 		pte = &table[XLAT_TABLE_VA_IDX(virt, level)];
@@ -348,7 +349,7 @@ static int vm_set_mapping(struct arm_mmu_ptables *ptables,\
 		level_size = 1ULL << LEVEL_TO_VA_SIZE_SHIFT(level);
 
 		if (vm_is_desc_superset(*pte, desc, level)) {
-			/* This block already covers our range */
+		/* This block already covers our range */
 			level_size -= (virt & (level_size - 1));
 			if (level_size > size) {
 				level_size = size;
@@ -357,7 +358,7 @@ static int vm_set_mapping(struct arm_mmu_ptables *ptables,\
 		}
 
 		if ((size < level_size) || (virt & (level_size - 1)) ||
-		    !vm_is_desc_block_aligned(desc, level_size)) {
+			!vm_is_desc_block_aligned(desc, level_size)) {
 			/* Range doesn't fit, create subtable */
 			table = vm_expand_to_table(pte, level, vmid);
 			if (!table) {
@@ -376,14 +377,14 @@ static int vm_set_mapping(struct arm_mmu_ptables *ptables,\
 			vm_table_usage(pte, -1, vmid);
 		}
 		/* Create (or erase) block/page descriptor */
-		vm_set_pte_block_desc(pte, desc, level);
+		vm_set_pte_block_desc(pte, desc, level, invalid);
 
 		/* recursively free unused tables if any */
 		while (level != BASE_XLAT_LEVEL &&
-		       vm_is_table_unused(pte, vmid)) {
+			   vm_is_table_unused(pte, vmid)) {
 			vm_free_table(pte, vmid);
 			pte = ptes[--level];
-			vm_set_pte_block_desc(pte, 0, level);
+			vm_set_pte_block_desc(pte, 0, level, false);
 			vm_table_usage(pte, -1, vmid);
 		}
 
@@ -452,7 +453,7 @@ static int vm_remove_dev_map(struct arm_mmu_ptables *ptables, const char *name,
 		 "address/size are not page aligned\n");
 
 	key = k_spin_lock(&vm_xlat_lock);
-	ret = vm_set_mapping(ptables, virt, size, 0, true, vmid);
+	ret = vm_set_mapping(ptables, virt, size, 0, true, false,vmid);
 	k_spin_unlock(&vm_xlat_lock, key);
 	return ret;
 }
@@ -473,7 +474,7 @@ static int vm_add_dev_map(struct arm_mmu_ptables *ptables, const char *name,
 		 "address/size are not page aligned\n");
 	key = k_spin_lock(&vm_xlat_lock);
 
-	ret = vm_set_mapping(ptables, virt, size, desc, may_overwrite, vmid);
+	ret = vm_set_mapping(ptables, virt, size, desc, may_overwrite, false, vmid);
 	k_spin_unlock(&vm_xlat_lock, key);
 	return ret;
 }
@@ -494,7 +495,7 @@ static int vm_add_map(struct arm_mmu_ptables *ptables, const char *name,
 	size = ALIGN_TO_PAGE(size);
 	__ASSERT(((virt | phys | size) & (CONFIG_MMU_PAGE_SIZE - 1)) == 0,
 		 "address/size are not page aligned\n");
-	ret = vm_set_mapping(ptables, virt, size, desc, may_overwrite, vmid);
+	ret = vm_set_mapping(ptables, virt, size, desc, may_overwrite, false, vmid);
 
 	k_spin_unlock(&vm_xlat_lock, key);
 	return ret;
@@ -512,13 +513,26 @@ static int vm_remove_map(struct arm_mmu_ptables *ptables, const char *name,
 	return ret;
 }
 
-int arch_mmap_vpart_to_block(uintptr_t phys, uintptr_t virt, size_t size, uint32_t attrs)
+int arch_mmap_vpart_to_block(struct k_mem_domain *domain,uintptr_t phys, uintptr_t virt, size_t size, uint32_t attrs,bool invalid,uint32_t vmid)
 {
     int ret;
 	ARG_UNUSED(ret);
     uintptr_t dest_virt = virt;
+	k_spinlock_key_t key;
+	uint64_t desc = get_vm_region_desc(attrs);
+	struct arm_mmu_ptables *domain_ptables = &domain->arch.ptables;
 
-	arch_vm_mmap_pre(dest_virt, phys, size,  attrs);
+	arch_vm_mmap_pre(dest_virt, phys, size, attrs);
+
+	desc |= phys;
+
+	key = k_spin_lock(&vm_xlat_lock);
+
+	__ASSERT(((virt | phys | size) & (CONFIG_MMU_PAGE_SIZE - 1)) == 0,
+		 "address/size are not page aligned\n");
+	ret = vm_set_mapping(domain_ptables, virt, size, desc, true, invalid, vmid);
+
+	k_spin_unlock(&vm_xlat_lock, key);
     return 0;
 }
 
