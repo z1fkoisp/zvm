@@ -316,7 +316,7 @@ int vcpu_ipi_scheduler(uint32_t cpu_mask, uint32_t timeout)
 int vcpu_thread_entry(struct z_vcpu *vcpu)
 {
     int ret = 0;
-
+    ZVM_LOG_INFO("\n** Start running vcpu: %s-%d. \n", vcpu->vm->vm_name, vcpu->vcpu_id);
     do {
         ret = arch_vcpu_run(vcpu);
 
@@ -327,7 +327,7 @@ int vcpu_thread_entry(struct z_vcpu *vcpu)
         }
 
     } while(ret >= 0);
-
+    ZVM_LOG_INFO("\n** Stop running vcpu: %s-%d. \n", vcpu->vm->vm_name, vcpu->vcpu_id);
     k_sem_give(&vcpu->vm->vcpu_exit_sem[vcpu->vcpu_id]);
 
     return ret;
@@ -431,7 +431,7 @@ struct z_vcpu *vm_vcpu_init(struct z_vm *vm, uint16_t vcpu_id, char *vcpu_name)
     vcpu->waitq_flag = false;
 
     key = k_spin_lock(&vcpu->vm->vm_vcpu_id_count.vcpu_id_lock);
-    vcpu->vcpu_id = vcpu->vm->vm_vcpu_id_count.count++;
+    vcpu->vm->vm_vcpu_id_count.count++;
     k_spin_unlock(&vcpu->vm->vm_vcpu_id_count.vcpu_id_lock, key);
 
     if (arch_vcpu_init(vcpu)) {

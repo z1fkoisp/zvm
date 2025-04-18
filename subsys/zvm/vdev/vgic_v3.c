@@ -245,7 +245,12 @@ static int vdev_gicv3_init(struct z_vm *vm, struct vgicv3_dev *gicv3_vdev, uint3
 		ZVM_SPINLOCK_INIT(&gicr->gicr_lock);
 
 		/* GICR TYPER */
+#if defined(CONFIG_SOC_RK3568)
+		tmp_typer = 1 << GICR_TYPER_LPI_AFFINITY_SHIFT | i << GICR_TYPER_PROCESSOR_NUMBER_SHIFT | (((uint64_t)i << 8) << GICR_TYPER_AFFINITY_VALUE_SHIFT);
+#else
 		tmp_typer = 1 << GICR_TYPER_LPI_AFFINITY_SHIFT | i << GICR_TYPER_PROCESSOR_NUMBER_SHIFT | ((uint64_t)i << GICR_TYPER_AFFINITY_VALUE_SHIFT);
+#endif
+
 		if(i >= vm->vcpu_num - 1) {
 			/* set last gicr region flag here, means it is the last gicr region */
 			tmp_typer |= 1 << GICR_TYPER_LAST_SHIFT;
@@ -504,7 +509,11 @@ int vgicv3_raise_sgi(struct z_vcpu *vcpu, unsigned long sgi_value)
 		for (bit = 0; bit < 16; bit++) {
 			if (sys_test_bit((uintptr_t)&target_list, bit)) {
 				/*Each cluster has CONFIG_MP_NUM_CPUS*/
+#if defined(CONFIG_SOC_RK3568)
+				tmp_id = aff1 + bit;
+#else
 				tmp_id = aff1 * CONFIG_MP_NUM_CPUS + bit;
+#endif
 				sys_set_bits((uintptr_t)&target_vcpu_list, BIT(tmp_id));
 				/*TODO: May need modified to vm->vcpu_num. */
 				if(++sgi_num > CONFIG_MAX_VCPU_PER_VM || tmp_id >= CONFIG_MAX_VCPU_PER_VM) {
@@ -521,7 +530,7 @@ int vgicv3_raise_sgi(struct z_vcpu *vcpu, unsigned long sgi_value)
 		if(target_vcpu_list & BIT(tmp_id)) {
 			set_virq_to_vm(vcpu->vm, sgi_id);
 			/* Set vcpu flag include itself */
-			if(target_vcpu_list & ~BIT(tmp_id)) {
+			if(target_vcpu_list & ~BIT(vcpu->vcpu_id)) {
 				arch_sched_broadcast_ipi();
 			}
 		} else {
