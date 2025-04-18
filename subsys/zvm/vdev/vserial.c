@@ -225,6 +225,9 @@ int switch_virtual_serial_handler(const struct shell *vs_shell, size_t argc, cha
         if (!(BIT(id) & zvm_overall_info->alloced_vmid)) {
 			ZVM_LOG_WARN("VM ID %d not alloced\n",id);
 			return 0;
+		} else if(zvm_overall_info->vms[id]->vm_status != VM_STATE_RUNNING){
+			ZVM_LOG_WARN("VM %d  is not running\n", id);
+			return 0;
 		} else {
 			serial = get_vserial(id);
 			((struct virt_pl011 *)(serial->priv))->connecting = true;

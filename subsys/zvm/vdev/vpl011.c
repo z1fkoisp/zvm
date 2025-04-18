@@ -84,8 +84,8 @@ static int vserial_vdev_mem_read(struct z_virt_dev *vdev, uint64_t addr, uint64_
 		*v = rdata->data[0];
 	}else if (offset == 0x40) {
 		*v = VDEV_REGS(vdev)->ris & VDEV_REGS(vdev)->imsc;
-	}else if (offset >= 0xfe0 && offset < 0x1000) {
-		*v = VDEV_REGS(vdev)->id[(offset - 0xfe0)>>2];
+	}else if (offset >= VPL011_LINUX_OFFSET && offset < 0x1000) {
+		*v = VDEV_REGS(vdev)->id[(offset - VPL011_LINUX_OFFSET) >> 2];
 	}
 	else {
 		*v = vserial_sysreg_read32(vs->vserial_reg_base, offset);
@@ -104,7 +104,7 @@ static int vserial_vdev_mem_write(struct z_virt_dev *vdev, uint64_t addr, uint64
     offset = addr - vs->vserial_base;
     vserial_sysreg_write32(*v, vs->vserial_reg_base, offset);
 
-	if (offset==0) {
+	if (offset == 0) {
 		VDEV_REGS(vdev)->ris |= VPL011_INT_TX;
 		vs->level = VDEV_REGS(vdev)->ris;
 		vs->enabled = VDEV_REGS(vdev)->imsc;
@@ -113,10 +113,10 @@ static int vserial_vdev_mem_write(struct z_virt_dev *vdev, uint64_t addr, uint64
 		if (vs->connecting) {
             uart_poll_out_to_host((unsigned char)*v);
 		}
-	}else if (offset==0x38) {
+	}else if (offset == 0x38) {
 		vs->level = VDEV_REGS(vdev)->ris;
 		vs->enabled = VDEV_REGS(vdev)->imsc;
-	}else if (offset==0x44 ) {
+	}else if (offset == 0x44 ) {
 		VDEV_REGS(vdev)->imsc &= ~VDEV_REGS(vdev)->icr;
 		VDEV_REGS(vdev)->ris &= ~VDEV_REGS(vdev)->icr;
 	}
@@ -153,7 +153,7 @@ static int vm_virt_serial_init(const struct device *dev, struct z_vm *vm, struct
 	ARG_UNUSED(vdev_desc);
 	char name[64];
 	int ret;
-	uint32_t serial_base, serial_size, virq;
+	uint64_t serial_base, serial_size, virq;
 	struct z_virt_dev *virt_dev;
 	struct virt_pl011 *vpl011;
 
@@ -167,7 +167,10 @@ static int vm_virt_serial_init(const struct device *dev, struct z_vm *vm, struct
 	}
 
 	/* Init virtual device for vm. */
-	virq = VSERIAL_HIRQ_NUM;
+	virq = VSERIAL_DEV_VIRQ;
+	printk("VSERIAL_REG_BASE: 0x%016llx\n", serial_base);
+	printk("VSERIAL_REG_SIZE: 0x%016llx\n", serial_size);
+	printk("VSERIAL_DEV_VIRQ: %lld\n", virq);
 	virt_dev = vm_virt_dev_add(vm, TOSTRING(VIRT_SERIAL_NAME), false, false, serial_base,
 						serial_base, serial_size, virq, virq);
 	if(!virt_dev) {

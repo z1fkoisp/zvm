@@ -11,9 +11,12 @@
 #include <zephyr/arch/arm64/sys_io.h>
 #include <zephyr/drivers/uart.h>
 
-#define VSERIAL_REG_BASE DT_REG_ADDR(DT_INST(0, arm_pl011))
-#define VSERIAL_REG_SIZE DT_REG_SIZE(DT_INST(0, arm_pl011))
-#define VSERIAL_HIRQ_NUM DT_IRQN(DT_INST(0, arm_pl011))
+#define VSERIAL_REG_BASE DT_REG_ADDR(DT_CHOSEN(vm_console))
+#define VSERIAL_REG_SIZE DT_REG_SIZE(DT_CHOSEN(vm_console))
+#define VSERIAL_DEV_VIRQ DT_IRQ_BY_IDX(DT_CHOSEN(vm_console), 0, irq)
+
+/* Linux amba-PL011 Regs Offset*/
+#define VPL011_LINUX_OFFSET		0xfe0
 
 #define ARM_PL011_ID {0x11, 0x10, 0x14, 0x00, 0x0d, 0xf0, 0x05, 0xb1}
 #define PL011_INT_TX			0x20
