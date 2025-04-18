@@ -77,6 +77,34 @@
 		interrupt-parent = <&gic>;
 	};
 
+	pmugrf: syscon@fdc20000 {
+		compatible = "rockchip,rk3568-pmugrf","syscon", "simple-mfd";
+		reg = <0xfdc20000 0x10000>;
+		status = "okay";
+	};
+
+	grf: syscon@fdc60000 {
+		compatible = "rockchip,rk3568-grf","syscon","simple-mfd";
+		reg = <0xfdc60000 0x10000>;
+		status = "okay";
+	};
+
+	pmucru: clock-controller@fdd00000 {
+		compatible = "rockchip,rk3568-pmucru";
+		reg = <0xfdd00000 0x1000>;
+		#clock-cells = <0x01>;
+		#reset-cells = <0x01>;
+		status = "okay";
+	};
+
+	cru: clock-controller@fdd20000 {
+		compatible = "rockchip,rk3568-cru";
+		reg = <0xfdd20000 0x1000>;
+		#clock-cells = <0x01>;
+		#reset-cells = <0x01>;
+		status = "okay";
+	};
+
 	uart2: serial@fe660000 {
 		compatible = "rockchip,rk3568-uart", "ns16550";
 		reg = <0xfe660000 0x10000>;

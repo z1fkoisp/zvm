@@ -53,3 +53,53 @@ config VIRT_SERIAL_CTRL_INIT_PRIORITY
 		When serial is init, it judge the initialization priority in POST_KERNLE.
 
 endif
+
+config VM_SYSCON_CONTROLLER
+	bool "VM syscon controller."
+	help
+		For hardware board, the system register may be configuration to multiple modes.
+		VM which needs these system configurations may access syscon, ZVM must manager
+		these configuration and determining which io function can be edit.
+
+if VM_SYSCON_CONTROLLER
+
+config VM_SYSCON_CONTROLLER_INIT_PRIORITY
+	int "VM syscon controller init priority."
+	default 60
+	help
+		When virt syscon is init, it judge the initialization priority in POST_KERNLE.
+
+endif
+
+config VM_CLOCK_SYSTEM_CONTROLLER
+	bool "VM clock system controller."
+	help
+		Some VMs may need to access clock syscon device, which is not suitable
+		to passthrough. ZVM must manager these clock devices and determining which
+		devices can be accessed.
+
+if VM_CLOCK_SYSTEM_CONTROLLER
+
+config VM_CLOCK_SYSTEM_CONTROLLER_INIT_PRIORITY
+	int "VM system clock controller init priority."
+	default 58
+	help
+		When virt system clock is init, it judge the initialization priority in POST_KERNLE.
+
+endif
+
+config VM_FIQ_DEBUGGER
+	bool "Linux VM debugger console on rk3568."
+	help
+		When booting linux VM on rk3568, a debugger console must be inited,
+		this option is used to map irq to linux vm.
+
+if VM_FIQ_DEBUGGER
+
+config VM_FIQ_DEBUGGER_INIT_PRIORITY
+	int "VM fiq debugger init priority."
+	default 62
+	help
+		When fiq debugger is init, it judge the initialization priority in POST_KERNLE.
+
+endif

@@ -19,10 +19,10 @@
 		zephyr,sram = &sram0;
 	};
 
-	sram0: memory@40000000 {
+	sram0: memory@10000000 {
 		device_type = "memory";
 		compatible = "mmio-sram";
-		reg = <0x40000000 DT_SIZE_M(1)>;
+		reg = <0x10000000 DT_SIZE_M(512)>;
 	};
 
 };

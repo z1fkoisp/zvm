@@ -20,12 +20,27 @@
 struct syscon_generic_config {
 	DEVICE_MMIO_ROM;
 	uint8_t reg_width;
+	uint32_t reg_base;
+	uint32_t reg_size;
 };
 
 struct syscon_generic_data {
 	DEVICE_MMIO_RAM;
 	size_t size;
 };
+
+#define DEV_CFG(dev) \
+	((const struct syscon_generic_config * const)(dev)->config)
+
+static int syscon_generic_init(const struct device *dev)
+{
+	int ret;
+
+	DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
+	ret = z_info_syscon(dev->name, DEV_CFG(dev)->reg_base, DEV_CFG(dev)->reg_size, dev);
+
+	return ret;
+}
 
 static int syscon_generic_get_base(const struct device *dev, uintptr_t *addr)
 {
@@ -128,17 +143,12 @@ static const struct syscon_driver_api syscon_generic_driver_api = {
 	.get_size = syscon_generic_get_size,
 };
 
-static int syscon_generic_init(const struct device *dev)
-{
-	DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
-
-	return 0;
-}
-
 #define SYSCON_INIT(inst)                                                                          \
 	static const struct syscon_generic_config syscon_generic_config_##inst = {                 \
 		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(inst)),                                           \
 		.reg_width = DT_INST_PROP_OR(inst, reg_io_width, 4),                               \
+		.reg_base = DT_INST_REG_ADDR(inst),                          						\
+		.reg_size = DT_INST_REG_SIZE(inst),                          						\
 	};                                                                                         \
 	static struct syscon_generic_data syscon_generic_data_##inst = {                           \
 		.size = DT_INST_REG_SIZE(inst),                                                    \

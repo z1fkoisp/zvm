@@ -178,6 +178,27 @@ resetwait:
 	beq	primary_core
 	/* fallthrough secondary */
 
+#if defined(CONFIG_SOC_RK3568)
+	msr SPsel, #1
+	switch_el x13, 15f, 16f, 18f
+18:
+16:
+	mov_imm x13, (SCTLR_EL2_RES1)
+	msr sctlr_el2, x13
+	isb
+	mov_imm x13, (SPSR_MODE_EL2H | DAIF_FIQ_BIT)
+	msr spsr_el2, x13
+	isb
+
+15:
+	mov_imm x13, (SCTLR_EL1_RES1) /* Do not enable mmu */
+	msr sctlr_el1, x13
+	isb
+	mov_imm x13, (SPSR_MODE_EL1H | DAIF_FIQ_BIT)
+	msr spsr_el1, x13
+	isb
+#endif
+
 	/* loop until our turn comes */
 secondary_core:
 	dmb	ish

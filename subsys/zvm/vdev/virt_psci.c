@@ -83,12 +83,20 @@ uint64_t psci_vcpu_on(struct z_vcpu *vcpu, arch_commom_regs_t *arch_ctxt)
     struct z_vm *vm = vcpu->vm;
 
     cpu_id = arch_ctxt->esf_handle_regs.x1;
+#if defined(CONFIG_SOC_RK3568)
+    cpu_id = cpu_id >> 8;
+#endif
     target_pc = arch_ctxt->esf_handle_regs.x2;
     context_id = arch_ctxt->esf_handle_regs.x3;
     vcpu = vm->vcpus[cpu_id];
 
     ctxt = &vcpu->arch->ctxt;
     ctxt->regs.pc = target_pc;
+
+#if defined(CONFIG_SOC_RK3568)
+    vcpu->arch->ctxt.regs.esf_handle_regs.x1 = arch_ctxt->esf_handle_regs.x1;
+    vcpu->arch->ctxt.sys_regs[VCPU_MPIDR_EL1] = arch_ctxt->esf_handle_regs.x1;
+#endif
 
     vm_vcpu_ready(vcpu);
     return PSCI_RET_SUCCESS;
