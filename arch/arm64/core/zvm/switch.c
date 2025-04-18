@@ -19,6 +19,7 @@
 #include <zephyr/zvm/vdev/vgic_common.h>
 #include <zephyr/zvm/vdev/virt_psci.h>
 #include <zephyr/zvm/vm_cpu.h>
+#include <zephyr/cache.h>
 
 
 LOG_MODULE_DECLARE(ZVM_MODULE_NAME);
@@ -491,6 +492,27 @@ int arch_vcpu_run(struct z_vcpu *vcpu)
     if(vcpu->vm->reboot){
         vcpu_sysreg_load(vcpu);
         vcpu->vm->reboot=false;
+    }
+
+    /* Clean VM's tlb, icache*/
+    if(vcpu->vm->cache_tlb_clean){
+        vcpu->vm->cache_tlb_clean = false;
+        /* invalid icache*/
+        sys_cache_instr_invd_all();
+        /* invalid tlb*/
+        __asm__ volatile (
+            "tlbi    alle2\n"
+            "dsb     sy\n"
+            "isb\n"
+            ::: "memory"
+        );
+        __asm__ volatile (
+            "tlbi    alle1\n"
+            "dsb     sy\n"
+            "isb\n"
+            ::: "memory"
+        );
+        z_barrier_isync_fence_full();
     }
 
     switch_to_guest_sysreg(vcpu);

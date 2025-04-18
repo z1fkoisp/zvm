@@ -203,6 +203,8 @@ static ALWAYS_INLINE uint32_t get_cache_clean(int pcpu_id){
     return pcpu_list[pcpu_id];
 }
 
+void set_pcpu_cache_clean(uint64_t cpu_id);
+
 void set_all_pcpu_cache_clean(void);
 
 int get_pcpu_cache_clean(uint64_t cpu_mpidr);

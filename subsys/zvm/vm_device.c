@@ -15,6 +15,9 @@
 #include <zephyr/zvm/vm_device.h>
 #include <zephyr/zvm/vm_mm.h>
 #include <zephyr/zvm/vdev/vgic_v3.h>
+#ifdef CONFIG_VM_FIQ_DEBUGGER
+#include <zephyr/zvm/vdev/fiq_debugger.h>
+#endif
 
 LOG_MODULE_DECLARE(ZVM_MODULE_NAME);
 
@@ -377,8 +380,11 @@ int vm_device_deinit(struct z_vm *vm)
         if(vdevice_instance != NULL) {
             if(vdevice_instance->api->deinit_fn){
                 ret = vdevice_instance->api->deinit_fn(NULL, vm, vdev);
-                ZVM_LOG_INFO("Remove virt_serial: %s.\n", vdev->name);
+                ZVM_LOG_INFO("Remove virt_device: %s.\n", vdev->name);
             }
+        } else if (vdev->dev_pt_flag) {
+            vm_virt_dev_remove(vm, vdev);
+            ZVM_LOG_INFO("Remove pt_device: %s.\n", vdev->name);
         }
     }
 

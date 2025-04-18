@@ -17,6 +17,7 @@
 #include <zephyr/zvm/vm.h>
 #include <zephyr/zvm/vm_device.h>
 #include <zephyr/zvm/vm_manager.h>
+#include <zephyr/cache.h>
 
 
 LOG_MODULE_REGISTER(ZVM_MODULE_NAME);
@@ -58,6 +59,17 @@ void zvm_ipi_handler(void)
             k_spin_unlock(&vcpu->vcpu_lock, key);
         }
     }
+
+#if defined(CONFIG_SOC_RK3568)
+    /* Clean VM's PCPU dcache*/
+    const uint64_t ipi_mpidr = GET_MPIDR();
+    if(get_pcpu_cache_clean(ipi_mpidr)){
+        sys_cache_data_invd_all();
+        //printk("\nPCPU 0x%llx Cache Clean!", (ipi_mpidr & 0xFFF));
+        reset_pcpu_cache_clean(ipi_mpidr);
+        z_barrier_isync_fence_full();
+    }
+#endif
 
 }
 
@@ -216,6 +228,31 @@ static int zvm_devices_list_init(void)
 struct zvm_dev_lists* get_zvm_dev_lists(void)
 {
     return &zvm_overall_dev_lists;
+}
+
+/**
+ * @brief the vm cpus cache clean options
+ */
+void set_all_pcpu_cache_clean(void)
+{
+    set_all_cache_clean();
+}
+
+void set_pcpu_cache_clean(uint64_t cpu_id)
+{
+    set_cpu_cache_clean(cpu_id);
+}
+
+void reset_pcpu_cache_clean(uint64_t cpu_mpidr)
+{
+    uint64_t pcpu_id = (cpu_mpidr & 0xFFF) >> 8;
+    reset_cache_clean(pcpu_id);
+}
+
+int get_pcpu_cache_clean(uint64_t cpu_mpidr)
+{
+    uint64_t pcpu_id = (cpu_mpidr & 0xF00) >> 8;
+    return get_cache_clean(pcpu_id);
 }
 
 /*

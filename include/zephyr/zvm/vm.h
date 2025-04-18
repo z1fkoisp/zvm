@@ -179,6 +179,7 @@ struct z_vm {
     uint16_t vmid;
     char vm_name[VM_NAME_LEN];
     bool reboot;
+    bool cache_tlb_clean;
 
     uint32_t vm_status;
 

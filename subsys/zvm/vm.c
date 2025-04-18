@@ -152,6 +152,11 @@ int vm_create(struct z_os_info *vm_info, struct z_vm *new_vm)
     }
     /* init vm*/
     vm->reboot = false;
+#if defined(CONFIG_SOC_RK3568)
+    vm->cache_tlb_clean = true;
+#else
+    vm->cache_tlb_clean = false;
+#endif
 
     vm->os = (struct z_os *)k_malloc(sizeof(struct z_os));
 	if (!vm->os) {
@@ -265,7 +270,7 @@ int vm_vcpus_create(uint16_t vcpu_num, struct z_vm *vm)
         return -ENXIO;
     }
 
-    vm->vcpu_exit_sem = (struct k_sem *)k_malloc(sizeof(struct k_sem));
+    vm->vcpu_exit_sem = (struct k_sem *)k_malloc(vcpu_num * sizeof(struct k_sem));
     if(!(vm->vcpu_exit_sem)) {
         ZVM_LOG_WARN("Vcpu exit sem init error! \n");
         return -ENXIO;
@@ -437,6 +442,13 @@ int vm_delete(struct z_vm *vm)
             continue;
         }
         vm_vcpu_deinit(vcpu);
+
+#if defined(CONFIG_SOC_RK3568)
+        set_pcpu_cache_clean(vcpu->cpu);
+        arch_sched_broadcast_ipi();
+        ZVM_LOG_INFO("Ready to clean VM's PCPU %d ... Finished\n", vcpu->cpu);
+#endif
+
     }
 
     if(vm->vcpu_exit_sem) {
