@@ -37,6 +37,8 @@
 #define LINUX_VMRFS_PHY_BASE    DT_PROP(DT_INST(0, linux_vm), rootfs_address)
 #define LINUX_VM_VCPU_NUM      DT_PROP(DT_INST(0, linux_vm), vcpu_num)
 
+#define LINUX_IMAGE_VMRFS_SIZE  0x15E00000
+
 #ifdef CONFIG_VM_DTB_FILE_INPUT
 #define LINUX_DTB_MEM_BASE        DT_PROP(DT_INST(0, linux_vm), dtb_address)
 #define LINUX_DTB_MEM_SIZE        DT_PROP(DT_INST(0, linux_vm), dtb_size)

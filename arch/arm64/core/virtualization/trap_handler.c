@@ -17,6 +17,8 @@
 #include <virtualization/vdev/vgic_v3.h>
 #include <virtualization/vdev/vgic_common.h>
 #include <virtualization/vdev/vpsci.h>
+#include <virtualization/os/os_linux.h>
+#include <virtualization/os/os_zephyr.h>
 
 LOG_MODULE_DECLARE(ZVM_MODULE_NAME);
 
@@ -43,9 +45,6 @@ static int handle_ftrans_desc(int iss_dfsc, uint64_t pa_addr,
     struct vcpu *vcpu = _current_vcpu;
     uint64_t esr_elx = vcpu->arch->fault.esr_el2;
 
-#ifdef CONFIG_VM_DYNAMIC_MEMORY
-    /* TODO: Add dynamic memory allocate. */
-#else
     uint16_t reg_index = dabt->srt;
     uint64_t *reg_value;
     reg_value = find_index_reg(reg_index, regs);
@@ -55,6 +54,63 @@ static int handle_ftrans_desc(int iss_dfsc, uint64_t pa_addr,
 
     /* check that if it is a device memory fault */
     ret = handle_vm_device_emulate(vcpu->vm, pa_addr);
+
+#ifdef CONFIG_VM_DYNAMIC_MEMORY
+    /* TODO: Add dynamic memory allocate. */
+    if(ret){
+        /* pci initial sucessful. */
+        if(ret > 0){
+            return 0;
+        }
+        else if(ret == -ENXIO || ret == -EFAULT ){
+            reg_value = find_index_reg(reg_index, regs);
+            *reg_value = 0xfefefefefefefefe;
+            ZVM_LOG_ERR("Unable to handle Date abort in address: 0x%llx ! \n", pa_addr);
+            ZVM_LOG_ERR("A stage-2 translation table need to set for this device address 0x%llx.\n", pa_addr);
+        }
+        else{
+            struct vm *vm = get_current_vm();
+            struct vm_mem_domain *vmem_domain = vm->vmem_domain;
+            struct _dnode *d_node, *ds_node,*vd_node, *vds_node;
+            struct vm_mem_partition *vpart;
+            struct vm_mem_block *blk;
+            uint64_t image_size, base_addr, base_offset, mem_size;
+            uint16_t vmid = vm->vmid;
+            if(vmid < ZVM_ZEPHYR_VM_NUM){
+                image_size   = ZEPHYR_VM_IMAGE_SIZE;
+                base_addr   = ZEPHYR_VMSYS_BASE;
+                mem_size    = ZEPHYR_VM_BLOCK_SIZE;
+                base_offset = (pa_addr - image_size - base_addr)/mem_size;
+            }else{
+                image_size = LINUX_IMAGE_VMRFS_SIZE;
+                base_addr = LINUX_VMSYS_BASE;
+                mem_size  = LINUX_VM_BLOCK_SIZE;
+                base_offset = (pa_addr - image_size - base_addr)/mem_size;
+            }
+            SYS_DLIST_FOR_EACH_NODE_SAFE(&vmem_domain->mapped_vpart_list,d_node,ds_node){
+                vpart = CONTAINER_OF(d_node,struct vm_mem_partition,vpart_node);
+                if(pa_addr >= vpart->vm_mm_partition->start && pa_addr < vpart->vm_mm_partition->start + vpart->vm_mm_partition->size){
+                    SYS_DLIST_FOR_EACH_NODE_SAFE(&vpart->blk_list,vd_node,vds_node){
+                        blk =  CONTAINER_OF(vd_node,struct vm_mem_block,vblk_node);
+                        if(blk->cur_blk_offset == base_offset){
+                            blk->phy_pointer = k_malloc(mem_size + CONFIG_MMU_PAGE_SIZE);
+                            blk->phy_base    = ROUND_UP(blk->phy_pointer, CONFIG_MMU_PAGE_SIZE);
+                            blk->phy_base    = z_mem_phys_addr(blk->phy_base);
+                            ret = arch_mmap_vpart_to_block(vmem_domain->vm_mm_domain,blk->phy_base,
+                                            blk->virt_base,mem_size,MT_VM_NORMAL_MEM,false,vmid);
+                            break;
+                        }
+                    }
+                    break;
+                }
+            }
+            vcpu->arch->ctxt.regs.pc -= (GET_ESR_IL(esr_elx)) ? 4 : 2;
+        }
+    }else{
+        ret = vm_mem_domain_partitions_add(vcpu->vm->vmem_domain);
+        vcpu->arch->ctxt.regs.pc -= (GET_ESR_IL(esr_elx)) ? 4 : 2;
+    }
+#else
     if(ret){
         /* pci initial sucessful. */
         if(ret > 0){

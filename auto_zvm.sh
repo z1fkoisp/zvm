@@ -63,11 +63,11 @@ elif [ "$OPS" = "${ops_array[1]}" ]; then
         -cpu max -m 8G -nographic -machine virt,virtualization=on,gic-version=3 \
         -net none -pidfile qemu.pid -chardev stdio,id=con,mux=on \
         -serial chardev:con -mon chardev=con,mode=readline -serial pty -serial pty -smp cpus=4 \
-        -device loader,file=$(pwd)/zvm_config/qemu_platform/hub/zephyr.bin,addr=0x60000000,force-raw=on \
-        -device loader,file=$(pwd)/zvm_config/qemu_platform/hub/Image_withoutFS,addr=0x70000000,force-raw=on \
-        -device loader,file=$(pwd)/zvm_config/qemu_platform/hub/linux-qemu-virt.dtb,addr=0x75000000 \
-        -device loader,file=$(pwd)/zvm_config/qemu_platform/hub/debian.cpio.gz,addr=0x90000000 \
-        -kernel $(pwd)/build/zephyr/zvm_host.elf
+        -device loader,file=$(pwd)/zvm_config/qemu_platform/hub/zephyr.bin,addr=0xa0000000,force-raw=on \
+        -device loader,file=$(pwd)/zvm_config/qemu_platform/hub/Image_withoutFS,addr=0xa2000000,force-raw=on \
+        -device loader,file=$(pwd)/zvm_config/qemu_platform/hub/linux-qemu-virt.dtb,addr=0xa8000000 \
+        -device loader,file=$(pwd)/zvm_config/qemu_platform/hub/debian.cpio.gz,addr=0xaa000000 \
+        -kernel $(pwd)/build/zephyr/zvm_host.elf -S -s
 ### using gdb to connect it:
 # gdb-multiarch -q -ex 'file ./build/zephyr/zvm_host.elf' -ex 'target remote localhost:1234'
 ### using trace to record qemu info when boot qemu
