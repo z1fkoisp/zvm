@@ -35,7 +35,7 @@ ZVM目前支持运行多款Guest OS，包括：
 ZVM目前支持兼容ARMv8架构的处理器芯片，包括：
 
 - 瑞芯微RK3568/RK3588
-- 飞腾D3000/S5000C
+- 飞腾E2000/D2000/D3000/S5000C
 - QEMU ARM64 virt (qemu-max)
 - ARM FVP(Fixed Virtual Platform, A55)
 
@@ -104,6 +104,8 @@ ZVM的性能测试在瑞芯微RK3568芯片上进行（开发板采用ROC-RK3568-
 **王清桥**，邮箱：qingqiaowang@hnu.edu.cn
 
 **赵航**，邮箱：zhaohang15639535703@hnu.edu.cn
+
+**何豫磊**，邮箱：heyulei@hnu.edu.cn
 
 **李宗军**，邮箱：lizongjun@phytium.com.cn
 
